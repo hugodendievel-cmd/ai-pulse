@@ -1,0 +1,50 @@
+{
+    "name": "ai-pulse",
+    "version": "1.0.0",
+    "description": "AI news intelligence dashboard — LLM releases, acquisitions, rumors, papers. 10 sources, one command, zero cloud.",
+    "type": "module",
+    "bin": {
+        "ai-pulse": "./cli.mjs"
+    },
+    "files": [
+        "cli.mjs",
+        "server.mjs",
+        "diag.mjs",
+        "apis/",
+        "lib/",
+        "dashboard/public/",
+        ".env.example"
+    ],
+    "engines": {
+        "node": ">=22.0.0",
+        "npm": ">=10.0.0"
+    },
+    "scripts": {
+        "start": "node cli.mjs",
+        "dev": "node --trace-warnings server.mjs",
+        "sweep": "node apis/briefing.mjs",
+        "inject": "node dashboard/inject.mjs",
+        "brief:save": "node apis/save-briefing.mjs",
+        "diag": "node diag.mjs"
+    },
+    "keywords": [
+        "ai",
+        "llm",
+        "news",
+        "dashboard",
+        "intelligence",
+        "osint",
+        "huggingface",
+        "arxiv",
+        "machine-learning"
+    ],
+    "author": "hugodendievel-cmd",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hugodendievel-cmd/ai-pulse"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "express": "^5.1.0"
+    }
+}

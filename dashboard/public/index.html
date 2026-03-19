@@ -1,0 +1,1927 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pulse — Intelligence Dashboard</title>
+    <style>
+      /* ── Reset & Base ── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0a0e17;
+        --bg2: #111827;
+        --bg3: #1a2332;
+        --border: #1e293b;
+        --cyan: #00e5ff;
+        --green: #00e676;
+        --amber: #ffc107;
+        --red: #ff1744;
+        --blue: #448aff;
+        --purple: #b388ff;
+        --pink: #ff80ab;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --dim: #475569;
+        --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "SF Mono", Consolas, "Courier New", monospace;
+      }
+      html {
+        font-size: 14px;
+      }
+      /* ── Light Theme ── */
+      html.light {
+        --bg: #f0f4f8;
+        --bg2: #ffffff;
+        --bg3: #f0f4f8;
+        --border: #e1e7ef;
+        --cyan: #1a73e8;
+        --green: #0d9488;
+        --amber: #b45309;
+        --red: #dc2626;
+        --blue: #2563eb;
+        --purple: #6d28d9;
+        --pink: #be185d;
+        --text: #1e293b;
+        --muted: #64748b;
+        --dim: #94a3b8;
+      }
+      html.light body {
+        background: var(--bg);
+        color: var(--text);
+      }
+      html.light .header {
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-bottom-color: var(--border);
+      }
+      html.light .panel {
+        background: #ffffff;
+        border-color: var(--border);
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.06),
+          0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      html.light .panel-header {
+        background: #f8fafc;
+        border-bottom-color: var(--border);
+      }
+      html.light .panel-title {
+        color: #334155;
+      }
+      html.light .ticker {
+        background: #ffffff;
+        border-bottom-color: var(--border);
+      }
+      html.light .news-item {
+        border-bottom-color: #f1f5f9;
+      }
+      html.light .news-title a {
+        color: #1e293b;
+      }
+      html.light .news-title a:hover {
+        color: var(--cyan);
+      }
+      html.light .news-source {
+        font-weight: 700;
+      }
+      html.light .model-card {
+        background: #f8fafc;
+        border-color: var(--border);
+      }
+      html.light .model-name {
+        color: var(--green);
+      }
+      html.light .model-tag {
+        background: #eff6ff;
+        color: var(--blue);
+      }
+      html.light .paper-card {
+        border-bottom-color: #f1f5f9;
+      }
+      html.light .paper-title {
+        color: var(--purple);
+      }
+      html.light .paper-cat {
+        background: #f5f3ff;
+        color: var(--purple);
+      }
+      html.light .repo-card {
+        border-bottom-color: #f1f5f9;
+      }
+      html.light .repo-name {
+        color: var(--blue);
+      }
+      html.light .news-score {
+        color: var(--amber);
+      }
+      html.light a {
+        color: var(--cyan);
+      }
+      html.light .loading-screen {
+        background: #f0f4f8;
+      }
+      html.light .loading-title {
+        color: var(--cyan);
+      }
+      html.light .loading-bar {
+        background: #e2e8f0;
+      }
+      html.light .loading-bar-inner {
+        background: var(--cyan);
+      }
+      html.light .source-modal {
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      }
+      html.light .source-modal h3 {
+        color: #334155;
+      }
+      html.light .source-modal-overlay {
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(4px);
+      }
+      html.light .source-chip {
+        background: #f8fafc;
+        border-color: var(--border);
+      }
+      html.light .analysis-summary {
+        background: #f8fafc;
+        border-left-color: var(--cyan);
+      }
+      html.light .theme-toggle {
+        background: #f1f5f9;
+        border-color: var(--border);
+      }
+      html.light .theme-toggle:hover {
+        background: #e2e8f0;
+      }
+      html.light .panel-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+      }
+      /* Light badge overrides */
+      html.light .badge-news {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      html.light .badge-research {
+        background: #ede9fe;
+        color: #6d28d9;
+      }
+      html.light .badge-model {
+        background: #ccfbf1;
+        color: #0d9488;
+      }
+      html.light .badge-community {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      html.light .badge-code {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+      html.light .badge-products {
+        background: #fce7f3;
+        color: #be185d;
+      }
+      html.light .trend-item {
+        background: #eff6ff;
+        color: var(--cyan);
+        border-color: #bfdbfe;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* ── Header ── */
+      .header {
+        background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(10px);
+      }
+      .header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--cyan);
+        text-transform: uppercase;
+      }
+      .header h1 span {
+        color: var(--text);
+        font-weight: 300;
+      }
+      .header-meta {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+      }
+      .status-dot.live {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+        animation: pulse 2s infinite;
+      }
+      .status-dot.loading {
+        background: var(--amber);
+        animation: pulse 1s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── News Ticker ── */
+      .ticker {
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        padding: 8px 0;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .ticker-inner {
+        display: inline-block;
+        animation: scroll-left 300s linear infinite;
+      }
+      .ticker-inner:hover {
+        animation-play-state: paused;
+      }
+      .ticker-item {
+        display: inline;
+        margin-right: 48px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .ticker-item .badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.65rem;
+        margin-right: 6px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .badge-news {
+        background: #1e3a5f;
+        color: var(--cyan);
+      }
+      .badge-research {
+        background: #2d1b4e;
+        color: var(--purple);
+      }
+      .badge-model {
+        background: #1b3d2e;
+        color: var(--green);
+      }
+      .badge-community {
+        background: #3d2b1b;
+        color: var(--amber);
+      }
+      .badge-code {
+        background: #1b2d3d;
+        color: var(--blue);
+      }
+      .badge-products {
+        background: #3d1b2b;
+        color: var(--pink);
+      }
+      @keyframes scroll-left {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+
+      /* ── Grid ── */
+      .dashboard {
+        padding: 16px;
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 12px;
+      }
+      .panel {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .panel-header {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .panel-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--cyan);
+        font-weight: 600;
+      }
+      .panel-count {
+        font-size: 0.7rem;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .panel-body {
+        padding: 12px 14px;
+        flex: 1;
+        overflow-y: auto;
+        max-height: 420px;
+      }
+      .panel-body::-webkit-scrollbar {
+        width: 4px;
+      }
+      .panel-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .panel-body::-webkit-scrollbar-thumb {
+        background: var(--dim);
+        border-radius: 2px;
+      }
+
+      /* Panel sizes */
+      .col-3 {
+        grid-column: span 3;
+      }
+      .col-4 {
+        grid-column: span 4;
+      }
+      .col-6 {
+        grid-column: span 6;
+      }
+      .col-8 {
+        grid-column: span 8;
+      }
+      .col-12 {
+        grid-column: span 12;
+      }
+
+      /* ── News Items ── */
+      .news-item {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .news-item:last-child {
+        border-bottom: none;
+      }
+      .news-title {
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1.3;
+        margin-bottom: 3px;
+      }
+      .news-meta {
+        font-size: 0.7rem;
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .news-source {
+        display: inline-block;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .news-score {
+        color: var(--amber);
+        font-family: var(--mono);
+      }
+      .paywall-btn {
+        display: inline-block;
+        font-size: 0.55rem;
+        padding: 1px 4px;
+        border-radius: 3px;
+        background: rgba(255, 193, 7, 0.12);
+        color: var(--amber);
+        font-weight: 700;
+        text-decoration: none;
+        letter-spacing: 0.3px;
+        vertical-align: middle;
+        margin-left: 4px;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+        transition: background 0.15s;
+      }
+      .paywall-btn:hover {
+        background: rgba(255, 193, 7, 0.25);
+        text-decoration: none;
+      }
+      html.light .paywall-btn {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+      }
+      html.light .paywall-btn:hover {
+        background: #fde68a;
+      }
+
+      /* ── Model Cards ── */
+      .model-card {
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+      }
+      .model-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--green);
+        margin-bottom: 2px;
+      }
+      .model-tags {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .model-tag {
+        font-size: 0.6rem;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--cyan);
+      }
+      .model-stats {
+        font-size: 0.7rem;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-top: 2px;
+      }
+
+      /* ── Paper Cards ── */
+      .paper-card {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .paper-title {
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--purple);
+        line-height: 1.3;
+      }
+      .paper-authors {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .paper-cats {
+        display: flex;
+        gap: 4px;
+        margin-top: 3px;
+      }
+      .paper-cat {
+        font-size: 0.6rem;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: rgba(179, 136, 255, 0.12);
+        color: var(--purple);
+      }
+
+      /* ── Repo Cards ── */
+      .repo-card {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .repo-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--blue);
+      }
+      .repo-desc {
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 2px;
+        line-height: 1.3;
+      }
+      .repo-stats {
+        font-size: 0.7rem;
+        color: var(--dim);
+        font-family: var(--mono);
+        margin-top: 3px;
+      }
+      .repo-stats span {
+        margin-right: 10px;
+      }
+      .star-icon {
+        color: var(--amber);
+      }
+
+      /* ── Analysis Panel ── */
+      .analysis-summary {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--text);
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        background: var(--bg3);
+        border-radius: 8px;
+        border-left: 3px solid var(--cyan);
+      }
+      .analysis-story {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .analysis-story:last-child {
+        border-bottom: none;
+      }
+      .analysis-headline {
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .analysis-significance {
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .impact-badge {
+        display: inline-block;
+        font-size: 0.55rem;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+      }
+      .impact-badge.high {
+        background: rgba(255, 23, 68, 0.15);
+        color: var(--red);
+      }
+      .impact-badge.medium {
+        background: rgba(255, 193, 7, 0.15);
+        color: var(--amber);
+      }
+      .impact-badge.low {
+        background: rgba(0, 230, 118, 0.15);
+        color: var(--green);
+      }
+      html.light .impact-badge.high {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      html.light .impact-badge.medium {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      html.light .impact-badge.low {
+        background: #d1fae5;
+        color: #059669;
+      }
+      .cat-tag {
+        display: inline-block;
+        font-size: 0.55rem;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: rgba(0, 229, 255, 0.08);
+        color: var(--cyan);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      html.light .cat-tag {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .impact-high {
+        color: var(--red);
+      }
+      .impact-medium {
+        color: var(--amber);
+      }
+      .impact-low {
+        color: var(--green);
+      }
+      .trend-item {
+        display: inline-block;
+        padding: 5px 12px;
+        margin: 3px;
+        border-radius: 14px;
+        font-size: 0.72rem;
+        background: rgba(0, 229, 255, 0.08);
+        color: var(--cyan);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        font-weight: 500;
+      }
+      .signal-item {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-size: 0.78rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .signal-item:last-child {
+        border-bottom: none;
+      }
+      .signal-conf {
+        font-size: 0.55rem;
+        font-family: var(--mono);
+        padding: 2px 6px;
+        border-radius: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .conf-high {
+        background: rgba(0, 230, 118, 0.15);
+        color: var(--green);
+      }
+      .conf-medium {
+        background: rgba(255, 193, 7, 0.15);
+        color: var(--amber);
+      }
+      .conf-low {
+        background: rgba(148, 163, 184, 0.15);
+        color: var(--muted);
+      }
+      html.light .conf-high {
+        background: #d1fae5;
+        color: #059669;
+      }
+      html.light .conf-medium {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      html.light .conf-low {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+      .signal-text {
+        flex: 1;
+      }
+      .signal-source {
+        font-size: 0.65rem;
+        color: var(--dim);
+        display: block;
+        margin-top: 1px;
+      }
+
+      /* ── Stats Bar ── */
+      .stats-bar {
+        display: flex;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+      }
+      .stat-card {
+        flex: 1;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--text);
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 0.65rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .stat-sub {
+        font-size: 0.7rem;
+        color: var(--dim);
+        font-family: var(--mono);
+        margin-top: 2px;
+      }
+      html.light .stats-bar {
+        background: #ffffff;
+      }
+      html.light .stat-card {
+        background: #f8fafc;
+        border-color: var(--border);
+      }
+
+      /* ── Mini Charts ── */
+      .mini-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 32px;
+      }
+      .mini-bar {
+        width: 16px;
+        border-radius: 2px 2px 0 0;
+        min-height: 2px;
+        transition: height 0.3s;
+        position: relative;
+      }
+      .mini-bar-label {
+        position: absolute;
+        bottom: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.45rem;
+        color: var(--dim);
+        white-space: nowrap;
+      }
+      .donut-chart {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      /* Model Radar Cards */
+      .radar-card {
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      html.light .radar-card {
+        background: #f8fafc;
+        border-color: var(--border);
+      }
+      .radar-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .radar-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .radar-name {
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .radar-org {
+        font-size: 0.65rem;
+        color: var(--muted);
+      }
+      .radar-note {
+        font-size: 0.65rem;
+        color: var(--dim);
+        margin-top: 1px;
+      }
+      .radar-status-label {
+        font-size: 0.55rem;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+      }
+
+      /* ── Freshness Ring ── */
+      .freshness-ring {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        font-weight: 700;
+        font-family: var(--mono);
+      }
+
+      /* ── Section Divider ── */
+      .section-label {
+        font-size: 0.68rem;
+        color: var(--cyan);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin: 6px 0 8px;
+        font-weight: 600;
+      }
+      html.light .section-label {
+        color: #334155;
+      }
+
+      /* ── Source Status ── */
+      .source-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 6px;
+      }
+      .source-chip {
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .source-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .source-chip .dot.ok {
+        background: var(--green);
+      }
+      .source-chip .dot.err {
+        background: var(--red);
+      }
+
+      /* ── Source Modal ── */
+      .source-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      .source-modal-overlay.open {
+        display: flex;
+      }
+      .source-modal {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px 24px;
+        min-width: 340px;
+        max-width: 480px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      }
+      .source-modal h3 {
+        font-size: 0.85rem;
+        color: var(--cyan);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+      }
+      .source-modal-close {
+        float: right;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 4px;
+      }
+      .source-modal-close:hover {
+        color: var(--text);
+      }
+      #sourceCount {
+        cursor: pointer;
+        border-bottom: 1px dashed var(--dim);
+        padding-bottom: 1px;
+      }
+      #sourceCount:hover {
+        color: var(--cyan);
+      }
+
+      /* ── Theme Toggle ── */
+      .theme-toggle {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+        color: var(--text);
+        transition: background 0.2s;
+      }
+      .theme-toggle:hover {
+        background: var(--border);
+      }
+
+      /* ── Loading ── */
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        transition: opacity 0.5s;
+      }
+      .loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .loading-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--cyan);
+        letter-spacing: 4px;
+        margin-bottom: 8px;
+      }
+      .loading-sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+      }
+      .loading-bar {
+        width: 300px;
+        height: 3px;
+        background: var(--bg3);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .loading-bar-inner {
+        height: 100%;
+        background: var(--cyan);
+        width: 0%;
+        transition: width 0.3s;
+        border-radius: 2px;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 1200px) {
+        .col-3 {
+          grid-column: span 4;
+        }
+        .col-4 {
+          grid-column: span 6;
+        }
+      }
+      @media (max-width: 768px) {
+        .col-3,
+        .col-4,
+        .col-6,
+        .col-8,
+        .col-12 {
+          grid-column: span 12;
+        }
+        .dashboard {
+          padding: 8px;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading">
+      <div class="loading-title">AI PULSE</div>
+      <div class="loading-sub">Querying 10 intelligence sources…</div>
+      <div class="loading-bar">
+        <div class="loading-bar-inner" id="loadingBar"></div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <h1>AI <span>PULSE</span></h1>
+      <div class="header-meta">
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          title="Toggle light/dark mode"
+        >
+          ☀️
+        </button>
+        <span
+          ><span class="status-dot loading" id="statusDot"></span>
+          <span id="statusText">INITIALIZING</span></span
+        >
+        <span id="sweepTime">—</span>
+        <span id="sourceCount">0/10 sources</span>
+      </div>
+    </header>
+
+    <!-- News Ticker -->
+    <div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="statsBar" style="display: none">
+      <div class="stat-card">
+        <div>
+          <div class="stat-number" id="statArticles">0</div>
+          <div class="stat-label">Articles</div>
+        </div>
+        <div class="mini-chart" id="chartSources"></div>
+      </div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-number" id="statModels">0</div>
+          <div class="stat-label">Models Tracked</div>
+        </div>
+        <div>
+          <div class="stat-sub" id="statTopPipeline">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-number" id="statPapers">0</div>
+          <div class="stat-label">Papers</div>
+        </div>
+        <div>
+          <div class="stat-sub" id="statTopCat">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-number" id="statRepos">0</div>
+          <div class="stat-label">Repos</div>
+        </div>
+        <div>
+          <div class="stat-sub" id="statTotalStars">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div
+          class="freshness-ring"
+          id="freshnessRing"
+          style="background: conic-gradient(var(--green) 0%, var(--bg3) 0%)"
+        >
+          <span id="freshnessVal">—</span>
+        </div>
+        <div>
+          <div class="stat-label">Freshness</div>
+          <div class="stat-sub" id="freshnessSub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard" id="dashboard">
+      <!-- AI Briefing: Summary + Top Stories -->
+      <div class="panel col-8" id="analysisPanel" style="display: none">
+        <div class="panel-header">
+          <span class="panel-title">🧠 AI Briefing</span>
+          <span class="panel-count" id="analysisProvider"></span>
+        </div>
+        <div
+          class="panel-body"
+          id="analysisBody"
+          style="max-height: none"
+        ></div>
+      </div>
+
+      <!-- AI Radar: Model Radar + Signals -->
+      <div class="panel col-4" id="radarPanel" style="display: none">
+        <div class="panel-header">
+          <span class="panel-title">📡 Radar</span>
+          <span class="panel-count" id="radarCount">0</span>
+        </div>
+        <div class="panel-body" id="radarBody" style="max-height: none"></div>
+      </div>
+
+      <!-- Trending AI News -->
+      <div class="panel col-6">
+        <div class="panel-header">
+          <span class="panel-title">🔥 Trending</span>
+          <span class="panel-count" id="trendingCount">0</span>
+        </div>
+        <div class="panel-body" id="trendingBody"></div>
+      </div>
+
+      <!-- Newest AI News -->
+      <div class="panel col-6">
+        <div class="panel-header">
+          <span class="panel-title">🆕 Newest</span>
+          <span class="panel-count" id="newsCount">0</span>
+        </div>
+        <div class="panel-body" id="newsBody"></div>
+      </div>
+
+      <!-- Trending Models (Hugging Face) -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">🤗 Trending Models</span>
+          <span class="panel-count" id="modelsCount">0</span>
+        </div>
+        <div class="panel-body" id="modelsBody"></div>
+      </div>
+
+      <!-- ArXiv Papers -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">📄 Latest Papers</span>
+          <span class="panel-count" id="papersCount">0</span>
+        </div>
+        <div class="panel-body" id="papersBody"></div>
+      </div>
+
+      <!-- GitHub Trending -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">💻 GitHub Trending</span>
+          <span class="panel-count" id="reposCount">0</span>
+        </div>
+        <div class="panel-body" id="reposBody"></div>
+      </div>
+
+      <!-- Reddit -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">💬 Reddit</span>
+          <span class="panel-count" id="redditCount">0</span>
+        </div>
+        <div class="panel-body" id="redditBody"></div>
+      </div>
+
+      <!-- Hacker News -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">🔶 Hacker News</span>
+          <span class="panel-count" id="hnCount">0</span>
+        </div>
+        <div class="panel-body" id="hnBody"></div>
+      </div>
+
+      <!-- Product Hunt -->
+      <div class="panel col-4">
+        <div class="panel-header">
+          <span class="panel-title">🚀 Product Hunt AI</span>
+          <span class="panel-count" id="phCount">0</span>
+        </div>
+        <div class="panel-body" id="phBody"></div>
+      </div>
+    </div>
+
+    <!-- Source Status Modal -->
+    <div class="source-modal-overlay" id="sourceModal">
+      <div class="source-modal">
+        <button class="source-modal-close" id="sourceModalClose">
+          &times;
+        </button>
+        <h3>📡 Source Status</h3>
+        <div id="sourceModalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      // ── State ──
+      let data = null;
+
+      // ── Loading animation (queued real progress via SSE) ──
+      const loadingBar = document.getElementById("loadingBar");
+      const loadingSub = document.querySelector(".loading-sub");
+      const STEP_DELAY = 350; // min ms between each progress step shown
+      let progressQueue = [];
+      let isAnimating = false;
+      let pendingUpdate = null;
+      let loadingDone = false;
+
+      function showStep(step) {
+        const pct = Math.round((step.done / step.total) * 100);
+        loadingBar.style.width = pct + "%";
+        const icon = step.status === "ok" ? "✓" : "✗";
+        loadingSub.textContent = `${icon} ${step.source} (${step.done}/${step.total})`;
+      }
+
+      function drainQueue() {
+        if (isAnimating || loadingDone) return;
+        if (progressQueue.length === 0) {
+          // Queue empty — if we have a pending update, finish loading
+          if (pendingUpdate) {
+            data = pendingUpdate;
+            pendingUpdate = null;
+            render(data);
+            hideLoading();
+          }
+          return;
+        }
+        isAnimating = true;
+        const step = progressQueue.shift();
+        showStep(step);
+        setTimeout(() => {
+          isAnimating = false;
+          drainQueue();
+        }, STEP_DELAY);
+      }
+
+      // ── SSE ──
+      const evtSource = new EventSource("/events");
+      evtSource.onmessage = (e) => {
+        if (e.data === "connected") return;
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "progress") {
+            progressQueue.push(msg);
+            drainQueue();
+          }
+          if (msg.type === "update") {
+            // Don't render immediately — wait for progress queue to drain
+            pendingUpdate = msg.data;
+            drainQueue();
+          }
+        } catch {}
+      };
+      evtSource.onerror = () => {
+        document.getElementById("statusDot").className = "status-dot";
+        document.getElementById("statusText").textContent = "DISCONNECTED";
+      };
+
+      // Fallback: poll /api/data (only if SSE hasn't delivered yet)
+      async function fallbackFetch() {
+        if (loadingDone) return;
+        try {
+          const res = await fetch("/api/data");
+          if (res.ok) {
+            const d = await res.json();
+            // Build synthetic progress from the source list
+            const sources = d.sweep?.sources || [];
+            sources.forEach((s, i) => {
+              progressQueue.push({
+                done: i + 1,
+                total: sources.length,
+                source: s.source,
+                status: s.status,
+              });
+            });
+            pendingUpdate = d;
+            drainQueue();
+          }
+        } catch {}
+      }
+      setTimeout(fallbackFetch, 8000);
+      setInterval(fallbackFetch, 60000);
+
+      function hideLoading() {
+        loadingDone = true;
+        loadingBar.style.width = "100%";
+        loadingSub.textContent = "All sources loaded";
+        setTimeout(
+          () => document.getElementById("loading").classList.add("hidden"),
+          500,
+        );
+      }
+
+      // ── Theme Toggle ──
+      (function initTheme() {
+        const saved = localStorage.getItem("ai-pulse-theme");
+        if (saved === "light") document.documentElement.classList.add("light");
+        const btn = document.getElementById("themeToggle");
+        function updateIcon() {
+          btn.textContent = document.documentElement.classList.contains("light")
+            ? "🌙"
+            : "☀️";
+        }
+        updateIcon();
+        btn.addEventListener("click", () => {
+          document.documentElement.classList.toggle("light");
+          localStorage.setItem(
+            "ai-pulse-theme",
+            document.documentElement.classList.contains("light")
+              ? "light"
+              : "dark",
+          );
+          updateIcon();
+        });
+      })();
+
+      // ── Helpers ──
+      function esc(s) {
+        const d = document.createElement("div");
+        d.textContent = s || "";
+        return d.innerHTML;
+      }
+
+      function timeAgo(iso) {
+        if (!iso) return "";
+        const diff = Date.now() - new Date(iso).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.floor(hrs / 24)}d ago`;
+      }
+
+      function badgeClass(cat) {
+        const map = {
+          news: "badge-news",
+          research: "badge-research",
+          models: "badge-model",
+          community: "badge-community",
+          code: "badge-code",
+          products: "badge-products",
+        };
+        return map[cat] || "badge-news";
+      }
+
+      function sourceColor(name) {
+        const map = {
+          TechCrunch: "#0a0",
+          "The Verge": "#f06",
+          VentureBeat: "#06f",
+          "Google News": "#fa0",
+          "Hacker News": "#f60",
+          Reddit: "#f40",
+          ArXiv: "#b388ff",
+          "Hugging Face": "#ffd21e",
+          "GitHub Trending": "#448aff",
+          "Product Hunt": "#da552f",
+        };
+        return map[name] || "#888";
+      }
+
+      function formatNum(n) {
+        if (!n) return "0";
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+        if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+        return n.toString();
+      }
+
+      // ── Main Render ──
+      function render(d) {
+        if (!d?.sweep) return;
+        const sweep = d.sweep;
+        const sources = sweep.sources || [];
+
+        // Header
+        document.getElementById("statusDot").className = "status-dot live";
+        document.getElementById("statusText").textContent = "LIVE";
+        document.getElementById("sweepTime").textContent = timeAgo(
+          sweep.timestamp,
+        );
+        document.getElementById("sourceCount").textContent =
+          `${sweep.sourcesOk}/${sweep.sourcesTotal} sources`;
+
+        // Collect all news for ticker
+        renderTicker(sources);
+        renderStats(sources);
+        renderNews(sources);
+        renderModels(sources);
+        renderPapers(sources);
+        renderGitHub(sources);
+        renderReddit(sources);
+        renderHN(sources);
+        renderProductHunt(sources);
+        renderAnalysis(d.analysis);
+        renderIntegrity(sources);
+      }
+
+      // ── Stats Bar ──
+      function renderStats(sources) {
+        document.getElementById("statsBar").style.display = "flex";
+
+        // Count articles, models, papers, repos
+        let totalArticles = 0,
+          totalModels = 0,
+          totalPapers = 0,
+          totalRepos = 0,
+          totalStars = 0;
+        const sourceCounts = {};
+        const pipelines = {};
+        const categories = {};
+        let newestTime = 0;
+
+        for (const s of sources) {
+          if (s.status !== "ok") continue;
+          const items = s.data?.items || [];
+          const models = s.data?.models?.items || [];
+          const name = s.source;
+
+          if (name === "Hugging Face") {
+            totalModels = models.length;
+            for (const m of models) {
+              const p = m.pipeline || "other";
+              pipelines[p] = (pipelines[p] || 0) + 1;
+            }
+          } else if (name === "ArXiv") {
+            totalPapers = items.length;
+            for (const p of items) {
+              for (const c of (p.categories || []).slice(0, 2)) {
+                categories[c] = (categories[c] || 0) + 1;
+              }
+            }
+          } else if (name === "GitHub Trending") {
+            totalRepos = items.length;
+            for (const r of items) totalStars += r.stars || 0;
+          } else {
+            totalArticles += items.length;
+            sourceCounts[name] = items.length;
+          }
+
+          // Track freshness
+          for (const item of items) {
+            const t = new Date(
+              item.published || item.created || item.time || 0,
+            ).getTime();
+            if (t > newestTime) newestTime = t;
+          }
+        }
+
+        document.getElementById("statArticles").textContent = totalArticles;
+        document.getElementById("statModels").textContent = totalModels;
+        document.getElementById("statPapers").textContent = totalPapers;
+        document.getElementById("statRepos").textContent = totalRepos;
+
+        // Top pipeline
+        const topPipeline = Object.entries(pipelines).sort(
+          (a, b) => b[1] - a[1],
+        )[0];
+        document.getElementById("statTopPipeline").textContent = topPipeline
+          ? `Top: ${topPipeline[0]}`
+          : "—";
+
+        // Top category
+        const topCat = Object.entries(categories).sort(
+          (a, b) => b[1] - a[1],
+        )[0];
+        document.getElementById("statTopCat").textContent = topCat
+          ? `Top: ${topCat[0]}`
+          : "—";
+
+        // Total stars
+        document.getElementById("statTotalStars").textContent =
+          `★ ${formatNum(totalStars)} total`;
+
+        // Source distribution chart
+        const colors = {
+          TechCrunch: "#0a0",
+          "The Verge": "#f06",
+          VentureBeat: "#06f",
+          "Google News": "#fa0",
+          Reddit: "#f40",
+          "Hacker News": "#f60",
+          "Product Hunt": "#da552f",
+        };
+        const maxCount = Math.max(...Object.values(sourceCounts), 1);
+        const chartHtml = Object.entries(sourceCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([name, count]) => {
+            const h = Math.max(4, Math.round((count / maxCount) * 32));
+            const c = colors[name] || "#888";
+            const abbrev = name
+              .split(" ")
+              .map((w) => w[0])
+              .join("");
+            return `<div class="mini-bar" style="height:${h}px;background:${c}" title="${name}: ${count}"><span class="mini-bar-label">${abbrev}</span></div>`;
+          })
+          .join("");
+        document.getElementById("chartSources").innerHTML = chartHtml;
+
+        // Freshness ring
+        const ageMins = newestTime
+          ? Math.max(0, Math.round((Date.now() - newestTime) / 60000))
+          : 999;
+        const freshPct = Math.max(0, Math.min(100, 100 - ageMins));
+        const freshColor =
+          ageMins < 30
+            ? "var(--green)"
+            : ageMins < 120
+              ? "var(--amber)"
+              : "var(--red)";
+        document.getElementById("freshnessRing").style.background =
+          `conic-gradient(${freshColor} ${freshPct}%, var(--bg3) ${freshPct}%)`;
+        document.getElementById("freshnessVal").textContent =
+          ageMins < 60 ? `${ageMins}m` : `${Math.round(ageMins / 60)}h`;
+        document.getElementById("freshnessSub").textContent =
+          ageMins < 30 ? "Very fresh" : ageMins < 120 ? "Recent" : "Aging";
+      }
+
+      // ── Ticker ──
+      function renderTicker(sources) {
+        const items = [];
+        for (const s of sources) {
+          if (s.status !== "ok") continue;
+          const srcItems = s.data?.items || [];
+          const cat = s.data?.category || "news";
+          for (const item of srcItems.slice(0, 5)) {
+            if (item.title) {
+              items.push({
+                title: item.title,
+                source: s.source,
+                cat,
+                url: item.url || item.permalink || "#",
+              });
+            }
+          }
+        }
+        // Double items for infinite scroll
+        const html = items
+          .map(
+            (i) =>
+              `<span class="ticker-item"><span class="badge ${badgeClass(i.cat)}">${esc(i.source)}</span> <a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a></span>`,
+          )
+          .join("");
+        document.getElementById("ticker").innerHTML = html + html;
+      }
+
+      // ── AI News (Trending + Newest) ──
+      function renderNews(sources) {
+        // Collect news items from article sources (exclude GitHub which has its own panel)
+        const excludeSources = new Set(["GitHub Trending"]);
+        const allItems = [];
+        for (const s of sources) {
+          if (s.status !== "ok" || excludeSources.has(s.source)) continue;
+          const items = s.data?.items || [];
+          for (const item of items.slice(0, 10)) {
+            allItems.push({
+              ...item,
+              _source: s.source,
+              _score: item.score || item.stars || item.likes || 0,
+              _comments: item.comments || item.descendants || 0,
+            });
+          }
+        }
+
+        // Trending: sort by engagement (score + comments)
+        const trending = [...allItems]
+          .filter((i) => i._score > 0 || i._comments > 0)
+          .sort((a, b) => b._score + b._comments - (a._score + a._comments))
+          .slice(0, 20);
+        document.getElementById("trendingCount").textContent = trending.length;
+        const noPaywall = new Set(["Reddit", "Hacker News"]);
+        document.getElementById("trendingBody").innerHTML = trending
+          .map((i) => {
+            const articleUrl = i.url || i.permalink || "";
+            const mainHref = i.hnLink || articleUrl;
+            const showBypass = articleUrl && !noPaywall.has(i._source);
+            const bypassUrl = showBypass
+              ? `https://www.removepaywall.com/search?url=${encodeURIComponent(articleUrl)}`
+              : "";
+            return `
+          <div class="news-item">
+            <div class="news-title"><a href="${esc(mainHref)}" target="_blank" rel="noopener">${esc(i.title || i.name)}</a>${bypassUrl ? ` <a href="${esc(bypassUrl)}" target="_blank" rel="noopener" class="paywall-btn" title="Bypass paywall">🔓</a>` : ""}</div>
+            <div class="news-meta">
+              <span class="news-source" style="background:${sourceColor(i._source)}22;color:${sourceColor(i._source)}">${esc(i._source)}</span>
+              ${i._score ? `<span class="news-score">▲ ${formatNum(i._score)}</span>` : ""}
+              ${i._comments ? `<span>💬 ${formatNum(i._comments)}</span>` : ""}
+              <span>${timeAgo(i.published || i.created || i.time)}</span>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+
+        // Newest: sort by date
+        const newest = [...allItems]
+          .filter((i) => i.published || i.created || i.time)
+          .sort(
+            (a, b) =>
+              new Date(b.published || b.created || b.time || 0) -
+              new Date(a.published || a.created || a.time || 0),
+          )
+          .slice(0, 20);
+        document.getElementById("newsCount").textContent = newest.length;
+        document.getElementById("newsBody").innerHTML = newest
+          .map((i) => {
+            const articleUrl = i.url || i.permalink || "";
+            const mainHref = i.hnLink || articleUrl;
+            const showBypass = articleUrl && !noPaywall.has(i._source);
+            const bypassUrl = showBypass
+              ? `https://www.removepaywall.com/search?url=${encodeURIComponent(articleUrl)}`
+              : "";
+            return `
+          <div class="news-item">
+            <div class="news-title"><a href="${esc(mainHref)}" target="_blank" rel="noopener">${esc(i.title || i.name)}</a>${bypassUrl ? ` <a href="${esc(bypassUrl)}" target="_blank" rel="noopener" class="paywall-btn" title="Bypass paywall">🔓</a>` : ""}</div>
+            <div class="news-meta">
+              <span class="news-source" style="background:${sourceColor(i._source)}22;color:${sourceColor(i._source)}">${esc(i._source)}</span>
+              ${i.creator ? `<span>${esc(i.creator)}</span>` : ""}
+              <span>${timeAgo(i.published || i.created || i.time)}</span>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      // ── Trending Models ──
+      function renderModels(sources) {
+        const hf = sources.find(
+          (s) => s.source === "Hugging Face" && s.status === "ok",
+        );
+        const models = hf?.data?.models?.items || [];
+        document.getElementById("modelsCount").textContent = models.length;
+
+        document.getElementById("modelsBody").innerHTML = models
+          .slice(0, 15)
+          .map(
+            (m) => `
+    <div class="model-card">
+      <div class="model-name"><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.id)}</a></div>
+      <div class="model-stats">↓ ${formatNum(m.downloads)} &nbsp; ♥ ${formatNum(m.likes)} &nbsp; ${esc(m.pipeline)}</div>
+      <div class="model-tags">${(m.tags || []).map((t) => `<span class="model-tag">${esc(t)}</span>`).join("")}</div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── ArXiv Papers ──
+      function renderPapers(sources) {
+        const arxiv = sources.find(
+          (s) => s.source === "ArXiv" && s.status === "ok",
+        );
+        const papers = arxiv?.data?.items || [];
+        document.getElementById("papersCount").textContent = papers.length;
+
+        document.getElementById("papersBody").innerHTML = papers
+          .slice(0, 15)
+          .map(
+            (p) => `
+    <div class="paper-card">
+      <div class="paper-title"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div>
+      <div class="paper-authors">${esc((p.authors || []).join(", "))}</div>
+      <div class="paper-cats">${(p.categories || [])
+        .slice(0, 3)
+        .map((c) => `<span class="paper-cat">${esc(c)}</span>`)
+        .join("")}</div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── GitHub Trending ──
+      function renderGitHub(sources) {
+        const gh = sources.find(
+          (s) => s.source === "GitHub Trending" && s.status === "ok",
+        );
+        const repos = gh?.data?.items || [];
+        document.getElementById("reposCount").textContent = repos.length;
+
+        document.getElementById("reposBody").innerHTML = repos
+          .slice(0, 12)
+          .map(
+            (r) => `
+    <div class="repo-card">
+      <div class="repo-name"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a></div>
+      <div class="repo-desc">${esc(r.description)}</div>
+      <div class="repo-stats">
+        <span><span class="star-icon">★</span> ${formatNum(r.stars)}</span>
+        <span>🍴 ${formatNum(r.forks)}</span>
+        ${r.language ? `<span>${esc(r.language)}</span>` : ""}
+      </div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── Reddit ──
+      function renderReddit(sources) {
+        const reddit = sources.find(
+          (s) => s.source === "Reddit" && s.status === "ok",
+        );
+        const posts = reddit?.data?.items || [];
+        document.getElementById("redditCount").textContent = posts.length;
+
+        document.getElementById("redditBody").innerHTML = posts
+          .slice(0, 15)
+          .map(
+            (p) => `
+    <div class="news-item">
+      <div class="news-title"><a href="${esc(p.permalink || p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div>
+      <div class="news-meta">
+        <span class="news-source" style="background:#f4000022;color:#f40">r/${esc(p.subreddit)}</span>
+        <span class="news-score">▲ ${formatNum(p.score)}</span>
+        <span>💬 ${p.comments}</span>
+        <span>${timeAgo(p.created)}</span>
+        ${p.flair ? `<span style="color:var(--purple)">${esc(p.flair)}</span>` : ""}
+      </div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── Hacker News ──
+      function renderHN(sources) {
+        const hn = sources.find(
+          (s) => s.source === "Hacker News" && s.status === "ok",
+        );
+        const stories = hn?.data?.items || [];
+        document.getElementById("hnCount").textContent = stories.length;
+
+        document.getElementById("hnBody").innerHTML = stories
+          .slice(0, 15)
+          .map(
+            (s) => `
+    <div class="news-item">
+      <div class="news-title"><a href="${esc(s.hnLink)}" target="_blank" rel="noopener">${esc(s.title)}</a></div>
+      <div class="news-meta">
+        <span class="news-score">▲ ${s.score}</span>
+        <span>💬 ${s.comments}</span>
+        <span>${esc(s.author)}</span>
+        <span>${timeAgo(s.time)}</span>
+      </div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── Product Hunt ──
+      function renderProductHunt(sources) {
+        const ph = sources.find(
+          (s) => s.source === "Product Hunt" && s.status === "ok",
+        );
+        const items = ph?.data?.items || [];
+        document.getElementById("phCount").textContent = items.length;
+
+        document.getElementById("phBody").innerHTML = items
+          .slice(0, 10)
+          .map(
+            (i) => `
+    <div class="news-item">
+      <div class="news-title"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${esc(i.description)}</div>
+      <div class="news-meta"><span>${timeAgo(i.published)}</span></div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ── Analysis ──
+      function renderAnalysis(analysis) {
+        const briefPanel = document.getElementById("analysisPanel");
+        const radarPanel = document.getElementById("radarPanel");
+        if (!analysis) {
+          briefPanel.style.display = "none";
+          radarPanel.style.display = "none";
+          return;
+        }
+        briefPanel.style.display = "block";
+        radarPanel.style.display = "block";
+
+        // ── Left panel: Briefing ──
+        let bHtml = "";
+        if (analysis.summary) {
+          bHtml += `<div class="analysis-summary">${esc(analysis.summary)}</div>`;
+        }
+
+        if (analysis.trends?.length) {
+          bHtml += `<div class="section-label">Emerging Trends</div>`;
+          bHtml += `<div style="margin-bottom:14px">${analysis.trends.map((t) => `<span class="trend-item">${esc(t)}</span>`).join("")}</div>`;
+        }
+
+        if (analysis.topStories?.length) {
+          bHtml += `<div class="section-label">Top Stories</div>`;
+          for (const s of analysis.topStories) {
+            const imp = s.impact || "medium";
+            const headlineText = esc(s.headline);
+            const headline = s.url
+              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${headlineText}</a>`
+              : headlineText;
+            bHtml += `<div class="analysis-story">
+              <div class="analysis-headline">
+                <span class="impact-badge ${imp}">${imp}</span>
+                ${headline}
+              </div>
+              <div class="analysis-significance">${esc(s.significance)} <span class="cat-tag">${esc(s.category)}</span></div>
+            </div>`;
+          }
+        }
+        document.getElementById("analysisBody").innerHTML = bHtml;
+
+        // ── Right panel: Radar ──
+        let rHtml = "";
+        if (analysis.modelRadar?.length) {
+          rHtml += `<div class="section-label">Model Radar</div>`;
+          const statusMeta = {
+            released: {
+              color: "var(--green)",
+              bg: "rgba(0,230,118,.15)",
+              label: "RELEASED",
+            },
+            announced: {
+              color: "var(--amber)",
+              bg: "rgba(255,193,7,.15)",
+              label: "ANNOUNCED",
+            },
+            rumored: {
+              color: "var(--pink)",
+              bg: "rgba(255,128,171,.15)",
+              label: "RUMORED",
+            },
+            "in-development": {
+              color: "var(--blue)",
+              bg: "rgba(68,138,255,.15)",
+              label: "IN DEV",
+            },
+          };
+          document.getElementById("radarCount").textContent =
+            analysis.modelRadar.length + (analysis.signals?.length || 0);
+          for (const m of analysis.modelRadar) {
+            const meta = statusMeta[m.status] || statusMeta["in-development"];
+            const nameText = esc(m.name);
+            const nameHtml = m.url
+              ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${nameText}</a>`
+              : nameText;
+            rHtml += `<div class="radar-card">
+              <div class="radar-status" style="background:${meta.color};box-shadow:0 0 6px ${meta.color}"></div>
+              <div class="radar-info">
+                <div class="radar-name">${nameHtml}</div>
+                <div class="radar-org">${esc(m.org)}</div>
+                ${m.note ? `<div class="radar-note">${esc(m.note)}</div>` : ""}
+              </div>
+              <span class="radar-status-label" style="background:${meta.bg};color:${meta.color}">${meta.label}</span>
+            </div>`;
+          }
+        }
+
+        if (analysis.signals?.length) {
+          rHtml += `<div class="section-label" style="margin-top:12px">Signals</div>`;
+          for (const s of analysis.signals) {
+            const conf = s.confidence || "low";
+            const sigText = esc(s.signal);
+            const sigContent = s.url
+              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${sigText}</a>`
+              : sigText;
+            rHtml += `<div class="signal-item">
+              <span class="signal-conf conf-${conf}">${esc(conf)}</span>
+              <div class="signal-text">${sigContent}<span class="signal-source">${esc(s.source)}</span></div>
+            </div>`;
+          }
+        }
+        document.getElementById("radarBody").innerHTML = rHtml;
+      }
+
+      // ── Source Integrity (modal) ──
+      let cachedSources = [];
+      function renderIntegrity(sources) {
+        cachedSources = sources;
+      }
+
+      // Source modal open/close
+      document.getElementById("sourceCount").addEventListener("click", () => {
+        const modal = document.getElementById("sourceModal");
+        if (cachedSources.length) {
+          document.getElementById("sourceModalBody").innerHTML =
+            `<div class="source-grid">${cachedSources
+              .map(
+                (s) =>
+                  `<div class="source-chip"><span class="dot ${s.status === "ok" ? "ok" : "err"}"></span>${esc(s.source)}</div>`,
+              )
+              .join("")}</div>`;
+        }
+        modal.classList.add("open");
+      });
+      document
+        .getElementById("sourceModalClose")
+        .addEventListener("click", () => {
+          document.getElementById("sourceModal").classList.remove("open");
+        });
+      document.getElementById("sourceModal").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget)
+          e.currentTarget.classList.remove("open");
+      });
+    </script>
+  </body>
+</html>
