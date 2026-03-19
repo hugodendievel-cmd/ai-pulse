@@ -4,6 +4,8 @@ AI news intelligence dashboard — LLM releases, acquisitions, research papers, 
 
 10 sources. One command. Zero cloud.
 
+<img width="2535" height="1203" alt="Capture d’écran 2026-03-19 à 20 49 52" src="https://github.com/user-attachments/assets/6f8d6634-b2c3-4884-b8a7-dc3b3c10ffbe" />
+
 ## Quick Start
 
 ### npx (recommended)
