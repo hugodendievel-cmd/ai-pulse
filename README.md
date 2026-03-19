@@ -63,12 +63,6 @@ A Jarvis-style HUD with:
 - **Product Hunt** — AI product launches
 - **Light / dark mode** — toggle with persistence
 - **Paywall bypass** — 🔓 button on news articles
-- **GitHub Trending** — hot AI/ML repositories
-- **Reddit** — r/MachineLearning, r/LocalLLaMA, r/artificial, r/singularity
-- **Hacker News** — AI stories from the front page (links to HN discussion)
-- **Product Hunt** — AI product launches
-- **Sweep Delta** — what changed since last sweep
-- **AI Analysis** — LLM-powered intelligence briefing (optional)
 
 ### Smart Refresh
 
