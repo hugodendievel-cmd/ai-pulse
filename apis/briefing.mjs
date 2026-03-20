@@ -4,6 +4,7 @@ import { briefing as githubTrending } from "./sources/github-trending.mjs";
 import { briefing as googleNews } from "./sources/google-news.mjs";
 import { briefing as hackernews } from "./sources/hackernews.mjs";
 import { briefing as huggingface } from "./sources/huggingface.mjs";
+import { briefing as newsapi } from "./sources/newsapi.mjs";
 import { briefing as producthunt } from "./sources/producthunt.mjs";
 import { briefing as reddit } from "./sources/reddit.mjs";
 import { briefing as techcrunch } from "./sources/techcrunch.mjs";
@@ -20,6 +21,7 @@ const SOURCES = [
   { name: "VentureBeat", fn: venturebeat },
   { name: "Reddit", fn: reddit },
   { name: "Google News", fn: googleNews },
+  { name: "NewsAPI", fn: newsapi },
   { name: "Product Hunt", fn: producthunt },
 ];
 
