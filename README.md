@@ -33,7 +33,7 @@ Edit `.env` in your working directory:
 # LLM (optional — enables AI briefing, model radar, signals)
 LLM_PROVIDER=openai       # anthropic | openai | gemini | disabled
 LLM_API_KEY=sk-...
-LLM_MODEL=gpt-4o          # optional override
+LLM_MODEL=gpt-5.4         # optional override
 
 # Server
 PORT=3200
@@ -106,11 +106,11 @@ All 10 sources work **without API keys**. Optional keys unlock higher rate limit
 
 Set `LLM_PROVIDER` in `.env` to one of: `anthropic`, `openai`, `gemini`
 
-| Provider  | Env Var       | Default Model            |
-| --------- | ------------- | ------------------------ |
-| anthropic | `LLM_API_KEY` | claude-sonnet-4-20250514 |
-| openai    | `LLM_API_KEY` | gpt-4o                   |
-| gemini    | `LLM_API_KEY` | gemini-2.0-flash         |
+| Provider  | Env Var       | Default Model          |
+| --------- | ------------- | ---------------------- |
+| anthropic | `LLM_API_KEY` | claude-sonnet-4-6      |
+| openai    | `LLM_API_KEY` | gpt-5.4                |
+| gemini    | `LLM_API_KEY` | gemini-3-flash-preview |
 
 ## Architecture
 
