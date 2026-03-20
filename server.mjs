@@ -22,6 +22,8 @@ let llm = null;
 let sweepCount = 0;
 let lastSweepTime = null;
 let sweepProgress = null; // tracks current sweep { done, total, source, status }
+let sweepProgressHistory = []; // all progress events for the current/last sweep
+let sweepInProgress = false;
 
 // ── Static files ──
 app.use(express.static(resolve(__dirname, "dashboard", "public")));
@@ -52,11 +54,9 @@ app.get("/events", (req, res) => {
     Connection: "keep-alive",
   });
   res.write("data: connected\n\n");
-  // Replay current sweep progress for late-joining clients
-  if (sweepProgress) {
-    res.write(
-      `data: ${JSON.stringify({ type: "progress", ...sweepProgress })}\n\n`,
-    );
+  // Replay all progress events for late-joining clients
+  for (const p of sweepProgressHistory) {
+    res.write(`data: ${JSON.stringify({ type: "progress", ...p })}\n\n`);
   }
   if (currentData) {
     res.write(
@@ -87,11 +87,16 @@ function broadcast(data) {
 
 // ── Sweep cycle ──
 async function sweep() {
+  if (sweepInProgress) return;
+  sweepInProgress = true;
   try {
+    sweepProgressHistory = [];
     sweepProgress = { done: 0, total: 10, source: "Starting…", status: "ok" };
+    sweepProgressHistory.push(sweepProgress);
     broadcast({ type: "progress", ...sweepProgress });
     const sweepData = await runSweep((progress) => {
       sweepProgress = progress;
+      sweepProgressHistory.push(progress);
       broadcast({ type: "progress", ...progress });
     });
     sweepProgress = null;
@@ -121,6 +126,8 @@ async function sweep() {
     broadcast({ type: "update", data: currentData });
   } catch (err) {
     console.error(`[AI Pulse] Sweep failed: ${err.message}`);
+  } finally {
+    sweepInProgress = false;
   }
 }
 

@@ -1217,7 +1217,8 @@
       // ── Loading animation (queued real progress via SSE) ──
       const loadingBar = document.getElementById("loadingBar");
       const loadingSub = document.querySelector(".loading-sub");
-      const STEP_DELAY = 350; // min ms between each progress step shown
+      const STEP_DELAY = 350; // ms between each progress step (live)
+      const REPLAY_DELAY = 80; // ms between each progress step (replaying history)
       let progressQueue = [];
       let isAnimating = false;
       let pendingUpdate = null;
@@ -1231,7 +1232,16 @@
       }
 
       function drainQueue() {
-        if (isAnimating || loadingDone) return;
+        if (isAnimating) return;
+        // After initial load, skip the progress animation and render directly
+        if (loadingDone) {
+          if (pendingUpdate) {
+            data = pendingUpdate;
+            pendingUpdate = null;
+            render(data);
+          }
+          return;
+        }
         if (progressQueue.length === 0) {
           // Queue empty — if we have a pending update, finish loading
           if (pendingUpdate) {
@@ -1245,10 +1255,12 @@
         isAnimating = true;
         const step = progressQueue.shift();
         showStep(step);
+        // Use fast delay when data is already available (replaying history)
+        const delay = pendingUpdate ? REPLAY_DELAY : STEP_DELAY;
         setTimeout(() => {
           isAnimating = false;
           drainQueue();
-        }, STEP_DELAY);
+        }, delay);
       }
 
       // ── SSE ──
@@ -1275,21 +1287,22 @@
 
       // Fallback: poll /api/data (only if SSE hasn't delivered yet)
       async function fallbackFetch() {
-        if (loadingDone) return;
         try {
           const res = await fetch("/api/data");
           if (res.ok) {
             const d = await res.json();
-            // Build synthetic progress from the source list
-            const sources = d.sweep?.sources || [];
-            sources.forEach((s, i) => {
-              progressQueue.push({
-                done: i + 1,
-                total: sources.length,
-                source: s.source,
-                status: s.status,
+            if (!loadingDone) {
+              // Build synthetic progress from the source list
+              const sources = d.sweep?.sources || [];
+              sources.forEach((s, i) => {
+                progressQueue.push({
+                  done: i + 1,
+                  total: sources.length,
+                  source: s.source,
+                  status: s.status,
+                });
               });
-            });
+            }
             pendingUpdate = d;
             drainQueue();
           }
@@ -1412,6 +1425,17 @@
         renderIntegrity(sources);
       }
 
+      // ── Periodic refresh of time-dependent UI ──
+      setInterval(() => {
+        if (!data?.sweep) return;
+        // Update sweep age in header
+        document.getElementById("sweepTime").textContent = timeAgo(
+          data.sweep.timestamp,
+        );
+        // Re-render stats to refresh the freshness ring
+        renderStats(data.sweep.sources || []);
+      }, 30000);
+
       // ── Stats Bar ──
       function renderStats(sources) {
         document.getElementById("statsBar").style.display = "flex";
@@ -1455,9 +1479,13 @@
           }
 
           // Track freshness
-          for (const item of items) {
+          for (const item of [...items, ...models]) {
             const t = new Date(
-              item.published || item.created || item.time || 0,
+              item.published ||
+                item.created ||
+                item.time ||
+                item.lastModified ||
+                0,
             ).getTime();
             if (t > newestTime) newestTime = t;
           }
@@ -1514,15 +1542,18 @@
           .join("");
         document.getElementById("chartSources").innerHTML = chartHtml;
 
-        // Freshness ring
+        // Freshness ring (24-hour scale: 0 min → 100%, 1440 min → 0%)
         const ageMins = newestTime
           ? Math.max(0, Math.round((Date.now() - newestTime) / 60000))
           : 999;
-        const freshPct = Math.max(0, Math.min(100, 100 - ageMins));
+        const freshPct = Math.max(
+          0,
+          Math.min(100, Math.round(100 * (1 - ageMins / 1440))),
+        );
         const freshColor =
-          ageMins < 30
+          ageMins < 60
             ? "var(--green)"
-            : ageMins < 120
+            : ageMins < 360
               ? "var(--amber)"
               : "var(--red)";
         document.getElementById("freshnessRing").style.background =
@@ -1530,7 +1561,7 @@
         document.getElementById("freshnessVal").textContent =
           ageMins < 60 ? `${ageMins}m` : `${Math.round(ageMins / 60)}h`;
         document.getElementById("freshnessSub").textContent =
-          ageMins < 30 ? "Very fresh" : ageMins < 120 ? "Recent" : "Aging";
+          ageMins < 60 ? "Very fresh" : ageMins < 360 ? "Recent" : "Aging";
       }
 
       // ── Ticker ──
