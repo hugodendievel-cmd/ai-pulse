@@ -340,7 +340,7 @@ function renderTicker(sources) {
           title: item.title,
           source: s.source,
           cat,
-          url: item.url || item.permalink || "#",
+          url: item.permalink || item.url || "#",
         });
       }
     }
