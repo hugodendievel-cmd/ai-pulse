@@ -1,4 +1,4 @@
-// dashboard/inject.mjs — Inject latest sweep data into static HTML
+// dashboard/inject.mjs — Inject latest sweep data into a self-contained static HTML
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,8 @@ const pkgRoot = resolve(__dirname, "..");
 
 const runsDir = resolve(process.cwd(), "runs");
 const htmlPath = resolve(pkgRoot, "dashboard", "public", "index.html");
+const cssPath = resolve(pkgRoot, "dashboard", "public", "style.css");
+const jsPath = resolve(pkgRoot, "dashboard", "public", "app.js");
 
 let data;
 try {
@@ -19,11 +21,22 @@ try {
   process.exit(1);
 }
 
-const html = readFileSync(htmlPath, "utf-8");
+let html = readFileSync(htmlPath, "utf-8");
+const css = readFileSync(cssPath, "utf-8");
+const js = readFileSync(jsPath, "utf-8");
+
+// Inline CSS and JS so the static file is self-contained
+html = html.replace(
+  '<link rel="stylesheet" href="/style.css" />',
+  `<style>${css}</style>`,
+);
+html = html.replace(
+  '<script src="/app.js"></script>',
+  `<script>${js}</script>`,
+);
 
 // Inject data as a script that auto-renders
 const injection = `<script>
-// Injected data from latest sweep
 (function(){
   const d = ${JSON.stringify({ sweep: data, delta: { isFirst: true }, analysis: null, generatedAt: data.timestamp })};
   document.addEventListener('DOMContentLoaded', () => { render(d); hideLoading(); });
