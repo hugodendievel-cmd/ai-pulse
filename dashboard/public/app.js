@@ -112,19 +112,131 @@ function hideLoading() {
   const saved = localStorage.getItem("ai-pulse-theme");
   if (saved === "light") document.documentElement.classList.add("light");
   const btn = document.getElementById("themeToggle");
-  function updateIcon() {
-    btn.textContent = document.documentElement.classList.contains("light")
-      ? "🌙"
-      : "☀️";
-  }
-  updateIcon();
   btn.addEventListener("click", () => {
     document.documentElement.classList.toggle("light");
     localStorage.setItem(
       "ai-pulse-theme",
       document.documentElement.classList.contains("light") ? "light" : "dark",
     );
-    updateIcon();
+  });
+})();
+
+// ── Nav Filter ──
+(function initNav() {
+  const nav = document.getElementById("headerNav");
+  if (!nav) return;
+  nav.addEventListener("click", (e) => {
+    const pill = e.target.closest(".nav-pill");
+    if (!pill) return;
+    nav
+      .querySelectorAll(".nav-pill")
+      .forEach((p) => p.classList.remove("active"));
+    pill.classList.add("active");
+    const filter = pill.dataset.filter;
+    document.querySelectorAll(".dashboard .panel").forEach((panel) => {
+      const section = panel.dataset.section;
+      if (filter === "all" || section === filter) {
+        panel.style.display = "";
+      } else {
+        panel.style.display = "none";
+      }
+    });
+  });
+})();
+
+// ── Command Palette (Search) ──
+(function initSearch() {
+  const overlay = document.getElementById("commandOverlay");
+  const input = document.getElementById("commandInput");
+  const results = document.getElementById("commandResults");
+  const trigger = document.getElementById("searchTrigger");
+
+  function open() {
+    overlay.classList.add("open");
+    input.value = "";
+    results.innerHTML = "";
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function close() {
+    overlay.classList.remove("open");
+    input.value = "";
+    results.innerHTML = "";
+  }
+
+  trigger.addEventListener("click", open);
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      if (overlay.classList.contains("open")) close();
+      else open();
+    }
+    if (e.key === "Escape" && overlay.classList.contains("open")) {
+      close();
+    }
+  });
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  function collectSearchItems(q) {
+    const allItems = [];
+    for (const s of data.sweep.sources || []) {
+      if (s.status !== "ok") continue;
+      for (const item of (s.data?.items || []).slice(0, 20)) {
+        if (item.title?.toLowerCase().includes(q)) {
+          allItems.push({
+            title: item.title,
+            source: s.source,
+            url: item.permalink || item.url || item.hnLink,
+          });
+        }
+      }
+      for (const m of (s.data?.models?.items || []).slice(0, 20)) {
+        if (m.id?.toLowerCase().includes(q)) {
+          allItems.push({ title: m.id, source: "Model", url: m.url });
+        }
+      }
+    }
+    return allItems;
+  }
+
+  function renderSearchResults(items) {
+    results.innerHTML = items
+      .slice(0, 12)
+      .map(
+        (item) =>
+          `<div class="command-result-item" data-url="${esc(item.url || "")}">
+        <span class="command-result-source">${esc(item.source)}</span>
+        <span class="command-result-title">${esc(item.title)}</span>
+      </div>`,
+      )
+      .join("");
+
+    results.querySelectorAll(".command-result-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        const url = el.dataset.url;
+        if (url) window.open(url, "_blank", "noopener");
+        close();
+      });
+    });
+  }
+
+  input.addEventListener("input", () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q || !data?.sweep) {
+      results.innerHTML = "";
+      return;
+    }
+    const allItems = collectSearchItems(q);
+    if (allItems.length === 0) {
+      results.innerHTML =
+        '<div class="command-no-results">No results found</div>';
+      return;
+    }
+    renderSearchResults(allItems);
   });
 })();
 
@@ -159,18 +271,18 @@ function badgeClass(cat) {
 
 function sourceColor(name) {
   const map = {
-    TechCrunch: "#0a0",
-    "The Verge": "#f06",
-    VentureBeat: "#06f",
-    "Google News": "#fa0",
-    "Hacker News": "#f60",
-    Reddit: "#f40",
-    ArXiv: "#b388ff",
-    "Hugging Face": "#ffd21e",
-    "GitHub Trending": "#448aff",
-    "Product Hunt": "#da552f",
+    TechCrunch: "#34d399",
+    "The Verge": "#f472b6",
+    VentureBeat: "#60a5fa",
+    "Google News": "#fbbf24",
+    "Hacker News": "#fb923c",
+    Reddit: "#f87171",
+    ArXiv: "#a78bfa",
+    "Hugging Face": "#fbbf24",
+    "GitHub Trending": "#60a5fa",
+    "Product Hunt": "#fb923c",
   };
-  return map[name] || "#888";
+  return map[name] || "#94a3b8";
 }
 
 function formatNum(n) {
@@ -189,8 +301,8 @@ function render(d) {
   document.getElementById("statusDot").className = "status-dot live";
   document.getElementById("statusText").textContent = "LIVE";
   document.getElementById("sweepTime").textContent = timeAgo(sweep.timestamp);
-  document.getElementById("sourceCount").textContent =
-    `${sweep.sourcesOk}/${sweep.sourcesTotal} sources`;
+  document.getElementById("sourceCountText").textContent =
+    `${sweep.sourcesOk}/${sweep.sourcesTotal}`;
 
   renderTicker(sources);
   renderStats(sources);
@@ -282,13 +394,13 @@ function renderStats(sources) {
     `★ ${formatNum(totalStars)} total`;
 
   const colors = {
-    TechCrunch: "#0a0",
-    "The Verge": "#f06",
-    VentureBeat: "#06f",
-    "Google News": "#fa0",
-    Reddit: "#f40",
-    "Hacker News": "#f60",
-    "Product Hunt": "#da552f",
+    TechCrunch: "#34d399",
+    "The Verge": "#f472b6",
+    VentureBeat: "#60a5fa",
+    "Google News": "#fbbf24",
+    Reddit: "#f87171",
+    "Hacker News": "#fb923c",
+    "Product Hunt": "#fb923c",
   };
   const maxCount = Math.max(...Object.values(sourceCounts), 1);
   const chartHtml = Object.entries(sourceCounts)
@@ -509,7 +621,7 @@ function renderReddit(sources) {
   <div class="news-item">
     <div class="news-title"><a href="${esc(p.permalink || p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div>
     <div class="news-meta">
-      <span class="news-source" style="background:#f4000022;color:#f40">r/${esc(p.subreddit)}</span>
+      <span class="news-source" style="background:rgba(248,113,113,0.12);color:#f87171">r/${esc(p.subreddit)}</span>
       <span class="news-score">▲ ${formatNum(p.score)}</span>
       <span>💬 ${p.comments}</span>
       <span>${timeAgo(p.created)}</span>
@@ -578,8 +690,8 @@ function renderAnalysis(analysis) {
     radarPanel.style.display = "none";
     return;
   }
-  briefPanel.style.display = "block";
-  radarPanel.style.display = "block";
+  briefPanel.style.display = "";
+  radarPanel.style.display = "";
 
   let bHtml = "";
   if (analysis.summary) {
