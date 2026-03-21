@@ -1,4 +1,5 @@
 // apis/briefing.mjs — Master orchestrator: runs all AI news sources in parallel
+import log from "../lib/logger.mjs";
 import { briefing as arxiv } from "./sources/arxiv.mjs";
 import { briefing as githubTrending } from "./sources/github-trending.mjs";
 import { briefing as googleNews } from "./sources/google-news.mjs";
@@ -10,6 +11,7 @@ import { briefing as reddit } from "./sources/reddit.mjs";
 import { briefing as techcrunch } from "./sources/techcrunch.mjs";
 import { briefing as theverge } from "./sources/theverge.mjs";
 import { briefing as venturebeat } from "./sources/venturebeat.mjs";
+import { sanitizeItem } from "./utils/sanitize.mjs";
 
 const SOURCES = [
   { name: "Hacker News", fn: hackernews },
@@ -25,10 +27,26 @@ const SOURCES = [
   { name: "Product Hunt", fn: producthunt },
 ];
 
+/** Sanitize all items returned by a source */
+function sanitizeSourceData(data) {
+  if (!data) return data;
+  if (data.items) {
+    data.items = data.items.map(sanitizeItem);
+  }
+  if (data.models?.items) {
+    data.models.items = data.models.items.map(sanitizeItem);
+  }
+  if (data.datasets?.items) {
+    data.datasets.items = data.datasets.items.map(sanitizeItem);
+  }
+  return data;
+}
+
 export async function runSweep(onProgress) {
   const start = Date.now();
-  console.log(
-    `[AI Pulse] Sweep started — querying ${SOURCES.length} sources in parallel…`,
+  log.info(
+    { sources: SOURCES.length },
+    "Sweep started — querying sources in parallel",
   );
 
   let done = 0;
@@ -37,7 +55,9 @@ export async function runSweep(onProgress) {
       const t0 = Date.now();
       try {
         const data = await s.fn();
-        console.log(`  ✓ ${s.name} (${Date.now() - t0}ms)`);
+        const sanitizedData = sanitizeSourceData(data);
+        const ms = Date.now() - t0;
+        log.info({ source: s.name, ms }, "Source OK");
         done++;
         onProgress?.({
           done,
@@ -45,9 +65,10 @@ export async function runSweep(onProgress) {
           source: s.name,
           status: "ok",
         });
-        return { source: s.name, status: "ok", data };
+        return { source: s.name, status: "ok", data: sanitizedData };
       } catch (err) {
-        console.log(`  ✗ ${s.name} — ${err.message} (${Date.now() - t0}ms)`);
+        const ms = Date.now() - t0;
+        log.warn({ source: s.name, ms, err: err.message }, "Source failed");
         done++;
         onProgress?.({
           done,
@@ -66,9 +87,7 @@ export async function runSweep(onProgress) {
   const okCount = sources.filter((s) => s.status === "ok").length;
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
 
-  console.log(
-    `[AI Pulse] Sweep complete — ${okCount}/${SOURCES.length} sources OK (${elapsed}s)`,
-  );
+  log.info({ ok: okCount, total: SOURCES.length, elapsed }, "Sweep complete");
 
   return {
     timestamp: new Date().toISOString(),
