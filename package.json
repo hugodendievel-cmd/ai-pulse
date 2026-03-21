@@ -25,7 +25,9 @@
         "sweep": "node apis/briefing.mjs",
         "inject": "node dashboard/inject.mjs",
         "brief:save": "node apis/save-briefing.mjs",
-        "diag": "node diag.mjs"
+        "diag": "node diag.mjs",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "keywords": [
         "ai",
@@ -45,6 +47,13 @@
     },
     "license": "MIT",
     "dependencies": {
-        "express": "^5.1.0"
+        "express": "^5.1.0",
+        "express-rate-limit": "^8.3.1",
+        "fast-xml-parser": "^5.5.8",
+        "helmet": "^8.1.0",
+        "pino": "^10.3.1"
+    },
+    "devDependencies": {
+        "vitest": "^3.2.4"
     }
 }
