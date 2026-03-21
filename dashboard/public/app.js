@@ -379,7 +379,7 @@ function renderNews(sources) {
   document.getElementById("trendingCount").textContent = trending.length;
   document.getElementById("trendingBody").innerHTML = trending
     .map((i) => {
-      const articleUrl = i.url || i.permalink || "";
+      const articleUrl = i.permalink || i.url || "";
       const mainHref = i.hnLink || articleUrl;
       return `
     <div class="news-item">
@@ -407,7 +407,7 @@ function renderNews(sources) {
   document.getElementById("newsCount").textContent = newest.length;
   document.getElementById("newsBody").innerHTML = newest
     .map((i) => {
-      const articleUrl = i.url || i.permalink || "";
+      const articleUrl = i.permalink || i.url || "";
       const mainHref = i.hnLink || articleUrl;
       return `
     <div class="news-item">
