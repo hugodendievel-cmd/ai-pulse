@@ -1,5 +1,6 @@
 // apis/sources/google-news.mjs — Google News AI RSS (no key needed)
 import { safeFetchText } from "../utils/fetch.mjs";
+import { parseRss } from "../utils/xml.mjs";
 
 const QUERIES = [
   "artificial+intelligence",
@@ -37,27 +38,6 @@ export async function briefing() {
     count: items.length,
     items: items.slice(0, 25),
   };
-}
-
-function parseRss(xml) {
-  const items = xml.split("<item>").slice(1);
-  return items.map((item) => {
-    const get = (tag) => {
-      const m = item.match(
-        new RegExp(
-          `<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`,
-        ),
-      );
-      return m ? m[1].trim() : "";
-    };
-    const source = get("source");
-    return {
-      title: get("title"),
-      url: get("link"),
-      published: get("pubDate"),
-      source: source,
-    };
-  });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
