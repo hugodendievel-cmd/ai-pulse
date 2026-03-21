@@ -48,10 +48,9 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'sha256-EOyKWkUkSF1GQI4uQrHzRItReDhlpu/GiQCbcVHjOQA='",
-        ],
+        // 'unsafe-inline' required: Railway injects inline scripts whose hash
+        // changes per deploy, making hash/nonce approaches impractical.
+        scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
         connectSrc: ["'self'"],
