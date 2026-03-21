@@ -48,7 +48,10 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'sha256-EOyKWkUkSF1GQI4uQrHzRItReDhlpu/GiQCbcVHjOQA='",
+        ],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
         connectSrc: ["'self'"],
