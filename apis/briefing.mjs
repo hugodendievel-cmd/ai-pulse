@@ -8,6 +8,7 @@ import { briefing as huggingface } from "./sources/huggingface.mjs";
 import { briefing as newsapi } from "./sources/newsapi.mjs";
 import { briefing as producthunt } from "./sources/producthunt.mjs";
 import { briefing as reddit } from "./sources/reddit.mjs";
+import { briefing as simonwillison } from "./sources/simonwillison.mjs";
 import { briefing as techcrunch } from "./sources/techcrunch.mjs";
 import { briefing as theverge } from "./sources/theverge.mjs";
 import { briefing as venturebeat } from "./sources/venturebeat.mjs";
@@ -25,7 +26,11 @@ const SOURCES = [
   { name: "Google News", fn: googleNews },
   { name: "NewsAPI", fn: newsapi },
   { name: "Product Hunt", fn: producthunt },
+  { name: "Simon Willison", fn: simonwillison },
 ];
+
+export const SOURCE_COUNT = SOURCES.length;
+export const SOURCE_NAMES = SOURCES.map(({ name }) => name);
 
 /** Sanitize all items returned by a source */
 function sanitizeSourceData(data) {
@@ -98,8 +103,58 @@ export async function runSweep(onProgress) {
   };
 }
 
+/**
+ * Digest-specific sweep: fetches from all sources with a 7-day window
+ * where supported (Google News, NewsAPI). Other sources return their
+ * current hot/trending content which is inherently recent.
+ */
+export async function runDigestSweep() {
+  const DIGEST_DAYS = 7;
+  const start = Date.now();
+  log.info("Digest sweep started — fetching 7-day content from all sources");
+
+  const results = await Promise.allSettled(
+    SOURCES.map(async (s) => {
+      const t0 = Date.now();
+      try {
+        const data = await s.fn({ days: DIGEST_DAYS });
+        const sanitizedData = sanitizeSourceData(data);
+        const ms = Date.now() - t0;
+        log.info({ source: s.name, ms }, "Digest source OK");
+        return { source: s.name, status: "ok", data: sanitizedData };
+      } catch (err) {
+        const ms = Date.now() - t0;
+        log.warn(
+          { source: s.name, ms, err: err.message },
+          "Digest source failed",
+        );
+        return { source: s.name, status: "error", error: err.message };
+      }
+    }),
+  );
+
+  const sources = results.map((r) =>
+    r.status === "fulfilled" ? r.value : r.reason,
+  );
+  const okCount = sources.filter((s) => s.status === "ok").length;
+
+  log.info(
+    { ok: okCount, total: SOURCES.length, ms: Date.now() - start },
+    "Digest sweep complete",
+  );
+
+  return {
+    timestamp: new Date().toISOString(),
+    sweepDurationMs: Date.now() - start,
+    sourcesOk: okCount,
+    sourcesTotal: SOURCES.length,
+    sources,
+  };
+}
+
 // CLI mode
 if (import.meta.url === `file://${process.argv[1]}`) {
-  import("./utils/env.mjs");
-  runSweep().then((d) => console.log(JSON.stringify(d, null, 2)));
+  await import("./utils/env.mjs");
+  const d = await runSweep();
+  console.log(JSON.stringify(d, null, 2));
 }

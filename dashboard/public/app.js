@@ -1,65 +1,144 @@
 // ── State ──
 let data = null;
 
-// ── Loading animation (queued real progress via SSE) ──
+// ── Loading animation (live progress via SSE) ──
 const loadingBar = document.getElementById("loadingBar");
+const loadingStage = document.getElementById("loadingStage");
 const loadingSub = document.querySelector(".loading-sub");
-const STEP_DELAY = 350;
-const REPLAY_DELAY = 80;
-let progressQueue = [];
-let isAnimating = false;
-let pendingUpdate = null;
+const loadingPercent = document.getElementById("loadingPercent");
+const loadingCounts = document.getElementById("loadingCounts");
+const loadingSteps = document.getElementById("loadingSteps");
 let loadingDone = false;
+let isFirstProgress = true;
+let postLoadGrace = false;
 
-function showStep(step) {
-  const pct = Math.round((step.done / step.total) * 100);
-  loadingBar.style.width = pct + "%";
-  const icon = step.status === "ok" ? "✓" : "✗";
-  loadingSub.textContent = `${icon} ${step.source} (${step.done}/${step.total})`;
+setLoadingWidth(0);
+
+function setLoadingWidth(nextPct) {
+  const boundedPct = Math.max(0, Math.min(100, nextPct));
+  loadingBar.style.width = `${boundedPct}%`;
 }
 
-function drainQueue() {
-  if (isAnimating) return;
-  if (loadingDone) {
-    if (pendingUpdate) {
-      data = pendingUpdate;
-      pendingUpdate = null;
-      render(data);
+function loadingStepStateMeta(state) {
+  if (state === "ok") return { icon: "✓", label: "Loaded" };
+  if (state === "error") return { icon: "!", label: "Failed" };
+  if (state === "running") return { icon: "●", label: "Running" };
+  if (state === "skipped") return { icon: "-", label: "Skipped" };
+  if (state === "disabled") return { icon: "-", label: "Disabled" };
+  return { icon: "…", label: "Pending" };
+}
+
+function renderLoadingSteps(steps) {
+  if (!loadingSteps) return;
+  loadingSteps.innerHTML = steps
+    .map((step) => {
+      const meta = loadingStepStateMeta(step.state);
+      const detail = step.detail || meta.label;
+      return `<div class="loading-step state-${esc(step.state)}">
+        <span class="loading-step-icon" aria-hidden="true">${meta.icon}</span>
+        <div class="loading-step-copy">
+          <div class="loading-step-label">${esc(step.label)}</div>
+          <div class="loading-step-detail">${esc(detail)}</div>
+        </div>
+        <span class="loading-step-status">${esc(meta.label)}</span>
+      </div>`;
+    })
+    .join("");
+
+  // Auto-scroll to the last completed or running step
+  const allStepEls = loadingSteps.querySelectorAll(".loading-step");
+  let scrollTarget = null;
+  for (const el of allStepEls) {
+    if (
+      el.classList.contains("state-ok") ||
+      el.classList.contains("state-error") ||
+      el.classList.contains("state-running")
+    ) {
+      scrollTarget = el;
     }
-    return;
   }
-  if (progressQueue.length === 0) {
-    if (pendingUpdate) {
-      data = pendingUpdate;
-      pendingUpdate = null;
-      render(data);
-      hideLoading();
+  if (scrollTarget) {
+    scrollTarget.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+
+function renderLoadingProgress(progress) {
+  // Smooth catch-up for late joiners: if first event already shows
+  // significant progress, use a longer animation so the bar doesn't jump.
+  if (isFirstProgress) {
+    isFirstProgress = false;
+    if ((progress.percent || 0) > 15) {
+      loadingBar.style.transition = "width 0.9s ease-out";
+      setTimeout(() => {
+        loadingBar.style.transition = "";
+      }, 950);
     }
-    return;
   }
-  isAnimating = true;
-  const step = progressQueue.shift();
-  showStep(step);
-  const delay = pendingUpdate ? REPLAY_DELAY : STEP_DELAY;
-  setTimeout(() => {
-    isAnimating = false;
-    drainQueue();
-  }, delay);
+
+  setLoadingWidth(progress.percent || 0);
+
+  if (loadingStage) {
+    loadingStage.textContent = progress.stageLabel || "SOURCE SWEEP";
+  }
+
+  loadingSub.textContent =
+    progress.message || "Preparing live intelligence sweep…";
+
+  if (loadingPercent) {
+    loadingPercent.textContent = `${progress.percent || 0}%`;
+  }
+
+  if (loadingCounts) {
+    const totals = progress.totals || {};
+    const sourcesDone = totals.sourcesDone || 0;
+    const sourcesTotal = totals.sourcesTotal || 0;
+    if (progress.phase === "sources" || !progress.llm?.enabled) {
+      loadingCounts.textContent = `${sourcesDone}/${sourcesTotal} sources`;
+    } else {
+      const llmDetail = progress.llm?.detail || "Ready";
+      loadingCounts.textContent = `${sourcesDone}/${sourcesTotal} sources · ${llmDetail}`;
+    }
+  }
+
+  renderLoadingSteps(progress.steps || []);
+}
+
+function completeLoading(nextData) {
+  data = nextData;
+  render(data);
+  hideLoading();
+  // Grace period: suppress one silent re-render so the dashboard doesn't
+  // visibly refresh right after arriving (common with short refresh intervals).
+  postLoadGrace = true;
 }
 
 // ── SSE ──
+let sseConnected = false;
 const evtSource = new EventSource("/events");
 evtSource.onmessage = (e) => {
-  if (e.data === "connected") return;
+  if (e.data === "connected") {
+    sseConnected = true;
+    return;
+  }
   try {
     const msg = JSON.parse(e.data);
     if (msg.type === "progress") {
-      progressQueue.push(msg);
-      drainQueue();
+      if (!loadingDone) renderLoadingProgress(msg);
     }
     if (msg.type === "update") {
-      pendingUpdate = msg.data;
-      drainQueue();
+      if (loadingDone) {
+        data = msg.data;
+        if (postLoadGrace) {
+          postLoadGrace = false; // absorb first silent update
+        } else {
+          render(data);
+        }
+      } else {
+        completeLoading(msg.data);
+      }
+    }
+    if (msg.type === "digest") {
+      renderDigest(msg.data);
     }
   } catch {
     /* ignore malformed messages */
@@ -70,25 +149,19 @@ evtSource.onerror = () => {
   document.getElementById("statusText").textContent = "DISCONNECTED";
 };
 
-// Fallback: poll /api/data
+// Fallback: poll /api/data (only when SSE is not active)
 async function fallbackFetch() {
+  if (sseConnected) return;
   try {
     const res = await fetch("/api/data");
     if (res.ok) {
       const d = await res.json();
-      if (!loadingDone) {
-        const sources = d.sweep?.sources || [];
-        sources.forEach((s, i) => {
-          progressQueue.push({
-            done: i + 1,
-            total: sources.length,
-            source: s.source,
-            status: s.status,
-          });
-        });
+      if (loadingDone) {
+        data = d;
+        render(data);
+      } else {
+        completeLoading(d);
       }
-      pendingUpdate = d;
-      drainQueue();
     }
   } catch {
     /* ignore */
@@ -99,8 +172,15 @@ setInterval(fallbackFetch, 60000);
 
 function hideLoading() {
   loadingDone = true;
-  loadingBar.style.width = "100%";
-  loadingSub.textContent = "All sources loaded";
+  setLoadingWidth(100);
+  if (loadingStage) loadingStage.textContent = "READY";
+  loadingSub.textContent = data?.analysis
+    ? "Briefing ready"
+    : "Live dashboard ready";
+  if (loadingPercent) loadingPercent.textContent = "100%";
+  if (loadingCounts && data?.sweep) {
+    loadingCounts.textContent = `${data.sweep.sourcesOk}/${data.sweep.sourcesTotal} live`;
+  }
   setTimeout(
     () => document.getElementById("loading").classList.add("hidden"),
     500,
@@ -122,6 +202,20 @@ function hideLoading() {
 })();
 
 // ── Nav Filter ──
+function applyNavFilter() {
+  const filter = activeFilter();
+  document.querySelectorAll(".dashboard .panel").forEach((panel) => {
+    const section = panel.dataset.section;
+    if (section === "digest") {
+      panel.style.display = filter === "digest" ? "" : "none";
+    } else if (filter === "all" || section === filter) {
+      panel.style.display = "";
+    } else {
+      panel.style.display = "none";
+    }
+  });
+}
+
 (function initNav() {
   const nav = document.getElementById("headerNav");
   if (!nav) return;
@@ -132,15 +226,153 @@ function hideLoading() {
       .querySelectorAll(".nav-pill")
       .forEach((p) => p.classList.remove("active"));
     pill.classList.add("active");
-    const filter = pill.dataset.filter;
-    document.querySelectorAll(".dashboard .panel").forEach((panel) => {
-      const section = panel.dataset.section;
-      if (filter === "all" || section === filter) {
-        panel.style.display = "";
+    applyNavFilter();
+    nav.classList.remove("open");
+  });
+})();
+
+// ── Panel Collapse ──
+(function initPanelCollapse() {
+  const STORAGE_KEY = "ai-pulse-collapsed";
+
+  function getCollapsed() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveCollapsed(ids) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+  }
+
+  function panelId(panel) {
+    return panel.id || panel.querySelector(".panel-title")?.textContent.trim();
+  }
+
+  // Inject toggle chevron into every panel header
+  document.querySelectorAll(".dashboard .panel").forEach((panel) => {
+    const header = panel.querySelector(".panel-header");
+    if (!header) return;
+
+    const chevron = document.createElement("span");
+    chevron.className = "panel-toggle";
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.textContent = "▼";
+    header.appendChild(chevron);
+
+    // Restore collapsed state
+    const id = panelId(panel);
+    if (id && getCollapsed().includes(id)) {
+      panel.classList.add("collapsed");
+    }
+
+    header.addEventListener("click", () => {
+      panel.classList.toggle("collapsed");
+      const collapsed = getCollapsed();
+      const pid = panelId(panel);
+      if (!pid) return;
+      if (panel.classList.contains("collapsed")) {
+        if (!collapsed.includes(pid)) collapsed.push(pid);
       } else {
-        panel.style.display = "none";
+        const idx = collapsed.indexOf(pid);
+        if (idx !== -1) collapsed.splice(idx, 1);
       }
+      saveCollapsed(collapsed);
+      syncCollapseAllBtn();
     });
+  });
+
+  // Collapse-all button
+  const collapseAllBtn = document.getElementById("collapseAllBtn");
+  function syncCollapseAllBtn() {
+    if (!collapseAllBtn) return;
+    const panels = document.querySelectorAll(".dashboard .panel");
+    const visible = [...panels].filter((p) => p.style.display !== "none");
+    const allCollapsed =
+      visible.length > 0 &&
+      visible.every((p) => p.classList.contains("collapsed"));
+    collapseAllBtn.classList.toggle("all-collapsed", allCollapsed);
+  }
+
+  if (collapseAllBtn) {
+    collapseAllBtn.addEventListener("click", () => {
+      const panels = document.querySelectorAll(".dashboard .panel");
+      const visible = [...panels].filter((p) => p.style.display !== "none");
+      const allCollapsed = visible.every((p) =>
+        p.classList.contains("collapsed"),
+      );
+      const collapsed = getCollapsed();
+
+      visible.forEach((panel) => {
+        const pid = panelId(panel);
+        if (allCollapsed) {
+          panel.classList.remove("collapsed");
+          if (pid) {
+            const idx = collapsed.indexOf(pid);
+            if (idx !== -1) collapsed.splice(idx, 1);
+          }
+        } else {
+          panel.classList.add("collapsed");
+          if (pid && !collapsed.includes(pid)) collapsed.push(pid);
+        }
+      });
+
+      saveCollapsed(collapsed);
+      syncCollapseAllBtn();
+    });
+  }
+
+  syncCollapseAllBtn();
+})();
+
+// ── Hamburger Menu ──
+(function initHamburger() {
+  const btn = document.getElementById("hamburgerBtn");
+  const nav = document.getElementById("headerNav");
+  if (!btn || !nav) return;
+
+  const isMobile = () => globalThis.matchMedia("(max-width: 768px)").matches;
+
+  function ensureMobileExtras() {
+    if (nav.querySelector(".mobile-menu-extras")) return;
+    const extras = document.createElement("div");
+    extras.className = "mobile-menu-extras";
+
+    const search = document.getElementById("searchTrigger");
+    if (search) {
+      const searchClone = search.cloneNode(true);
+      searchClone.removeAttribute("id");
+      searchClone.addEventListener("click", () => {
+        nav.classList.remove("open");
+        search.click();
+      });
+      extras.appendChild(searchClone);
+    }
+
+    const theme = document.getElementById("themeToggle");
+    if (theme) {
+      const themeClone = theme.cloneNode(true);
+      themeClone.removeAttribute("id");
+      themeClone.addEventListener("click", () => {
+        theme.click();
+      });
+      extras.appendChild(themeClone);
+    }
+
+    nav.appendChild(extras);
+  }
+
+  btn.addEventListener("click", () => {
+    if (isMobile()) ensureMobileExtras();
+    nav.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!btn.contains(e.target) && !nav.contains(e.target)) {
+      nav.classList.remove("open");
+    }
   });
 })();
 
@@ -281,6 +513,7 @@ function sourceColor(name) {
     "Hugging Face": "#fbbf24",
     "GitHub Trending": "#60a5fa",
     "Product Hunt": "#fb923c",
+    "Simon Willison": "#38bdf8",
   };
   return map[name] || "#94a3b8";
 }
@@ -303,6 +536,8 @@ function render(d) {
   document.getElementById("sweepTime").textContent = timeAgo(sweep.timestamp);
   document.getElementById("sourceCountText").textContent =
     `${sweep.sourcesOk}/${sweep.sourcesTotal}`;
+  const footerSrc = document.getElementById("footerSources");
+  if (footerSrc) footerSrc.textContent = `${sweep.sourcesTotal} sources`;
 
   renderTicker(sources);
   renderStats(sources);
@@ -313,9 +548,14 @@ function render(d) {
   renderReddit(sources);
   renderHN(sources);
   renderProductHunt(sources);
+  renderBlog(sources);
   renderAnalysis(d.analysis);
   renderIntegrity(sources);
+  applyNavFilter();
 }
+
+// Fetch digest on load
+fetchDigest().catch(() => {}); // NOSONAR — browser script, not an ES module
 
 // ── Periodic refresh of time-dependent UI ──
 setInterval(() => {
@@ -327,72 +567,61 @@ setInterval(() => {
 }, 30000);
 
 // ── Stats Bar ──
-function renderStats(sources) {
-  document.getElementById("statsBar").style.display = "flex";
+function countSourceItems(s, acc) {
+  const items = s.data?.items || [];
+  const models = s.data?.models?.items || [];
+  const name = s.source;
 
-  let totalArticles = 0,
-    totalModels = 0,
-    totalPapers = 0,
-    totalRepos = 0,
-    totalStars = 0;
-  const sourceCounts = {};
-  const pipelines = {};
-  const categories = {};
-  let newestTime = 0;
+  if (name === "Hugging Face") {
+    acc.totalModels = models.length;
+    for (const m of models) {
+      const p = m.pipeline || "other";
+      acc.pipelines[p] = (acc.pipelines[p] || 0) + 1;
+    }
+  } else if (name === "ArXiv") {
+    acc.totalPapers = items.length;
+    const cats = items.flatMap((p) => (p.categories || []).slice(0, 2));
+    for (const c of cats) {
+      acc.categories[c] = (acc.categories[c] || 0) + 1;
+    }
+  } else if (name === "GitHub Trending") {
+    acc.totalRepos = items.length;
+    for (const r of items) acc.totalStars += r.stars || 0;
+  } else {
+    acc.totalArticles += items.length;
+    acc.sourceCounts[name] = items.length;
+  }
+
+  for (const item of [...items, ...models]) {
+    const t = new Date(
+      item.published || item.created || item.time || item.lastModified || 0,
+    ).getTime();
+    if (t > acc.newestTime) acc.newestTime = t;
+  }
+}
+
+function aggregateSources(sources) {
+  const acc = {
+    totalArticles: 0,
+    totalModels: 0,
+    totalPapers: 0,
+    totalRepos: 0,
+    totalStars: 0,
+    sourceCounts: {},
+    pipelines: {},
+    categories: {},
+    newestTime: 0,
+  };
 
   for (const s of sources) {
     if (s.status !== "ok") continue;
-    const items = s.data?.items || [];
-    const models = s.data?.models?.items || [];
-    const name = s.source;
-
-    if (name === "Hugging Face") {
-      totalModels = models.length;
-      for (const m of models) {
-        const p = m.pipeline || "other";
-        pipelines[p] = (pipelines[p] || 0) + 1;
-      }
-    } else if (name === "ArXiv") {
-      totalPapers = items.length;
-      for (const p of items) {
-        for (const c of (p.categories || []).slice(0, 2)) {
-          categories[c] = (categories[c] || 0) + 1;
-        }
-      }
-    } else if (name === "GitHub Trending") {
-      totalRepos = items.length;
-      for (const r of items) totalStars += r.stars || 0;
-    } else {
-      totalArticles += items.length;
-      sourceCounts[name] = items.length;
-    }
-
-    for (const item of [...items, ...models]) {
-      const t = new Date(
-        item.published || item.created || item.time || item.lastModified || 0,
-      ).getTime();
-      if (t > newestTime) newestTime = t;
-    }
+    countSourceItems(s, acc);
   }
 
-  document.getElementById("statArticles").textContent = totalArticles;
-  document.getElementById("statModels").textContent = totalModels;
-  document.getElementById("statPapers").textContent = totalPapers;
-  document.getElementById("statRepos").textContent = totalRepos;
+  return acc;
+}
 
-  const topPipeline = Object.entries(pipelines).sort((a, b) => b[1] - a[1])[0];
-  document.getElementById("statTopPipeline").textContent = topPipeline
-    ? `Top: ${topPipeline[0]}`
-    : "—";
-
-  const topCat = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
-  document.getElementById("statTopCat").textContent = topCat
-    ? `Top: ${topCat[0]}`
-    : "—";
-
-  document.getElementById("statTotalStars").textContent =
-    `★ ${formatNum(totalStars)} total`;
-
+function renderSourceChart(sourceCounts) {
   const colors = {
     TechCrunch: "#34d399",
     "The Verge": "#f472b6",
@@ -403,7 +632,7 @@ function renderStats(sources) {
     "Product Hunt": "#fb923c",
   };
   const maxCount = Math.max(...Object.values(sourceCounts), 1);
-  const chartHtml = Object.entries(sourceCounts)
+  return Object.entries(sourceCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
     .map(([name, count]) => {
@@ -416,8 +645,9 @@ function renderStats(sources) {
       return `<div class="mini-bar" style="height:${h}px;background:${c}" title="${name}: ${count}"><span class="mini-bar-label">${abbrev}</span></div>`;
     })
     .join("");
-  document.getElementById("chartSources").innerHTML = chartHtml;
+}
 
+function renderFreshness(newestTime) {
   const ageMins = newestTime
     ? Math.max(0, Math.round((Date.now() - newestTime) / 60000))
     : 999;
@@ -425,18 +655,50 @@ function renderStats(sources) {
     0,
     Math.min(100, Math.round(100 * (1 - ageMins / 1440))),
   );
-  const freshColor =
-    ageMins < 60
-      ? "var(--green)"
-      : ageMins < 360
-        ? "var(--amber)"
-        : "var(--red)";
+  let freshColor = "var(--red)";
+  if (ageMins < 60) freshColor = "var(--green)";
+  else if (ageMins < 360) freshColor = "var(--amber)";
+
+  let freshnessLabel = "Aging";
+  if (ageMins < 60) freshnessLabel = "Very fresh";
+  else if (ageMins < 360) freshnessLabel = "Recent";
+
   document.getElementById("freshnessRing").style.background =
     `conic-gradient(${freshColor} ${freshPct}%, var(--bg3) ${freshPct}%)`;
   document.getElementById("freshnessVal").textContent =
     ageMins < 60 ? `${ageMins}m` : `${Math.round(ageMins / 60)}h`;
-  document.getElementById("freshnessSub").textContent =
-    ageMins < 60 ? "Very fresh" : ageMins < 360 ? "Recent" : "Aging";
+  document.getElementById("freshnessSub").textContent = freshnessLabel;
+}
+
+function renderStats(sources) {
+  document.getElementById("statsBar").style.display = "flex";
+
+  const agg = aggregateSources(sources);
+
+  document.getElementById("statArticles").textContent = agg.totalArticles;
+  document.getElementById("statModels").textContent = agg.totalModels;
+  document.getElementById("statPapers").textContent = agg.totalPapers;
+  document.getElementById("statRepos").textContent = agg.totalRepos;
+
+  const topPipeline = Object.entries(agg.pipelines).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+  document.getElementById("statTopPipeline").textContent = topPipeline
+    ? `Top: ${topPipeline[0]}`
+    : "—";
+
+  const topCat = Object.entries(agg.categories).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById("statTopCat").textContent = topCat
+    ? `Top: ${topCat[0]}`
+    : "—";
+
+  document.getElementById("statTotalStars").textContent =
+    `★ ${formatNum(agg.totalStars)} total`;
+
+  document.getElementById("chartSources").innerHTML = renderSourceChart(
+    agg.sourceCounts,
+  );
+  renderFreshness(agg.newestTime);
 }
 
 // ── Ticker ──
@@ -681,37 +943,60 @@ function renderProductHunt(sources) {
     .join("");
 }
 
-// ── Analysis ──
-function renderAnalysis(analysis) {
-  const briefPanel = document.getElementById("analysisPanel");
-  const radarPanel = document.getElementById("radarPanel");
-  if (!analysis) {
-    briefPanel.style.display = "none";
-    radarPanel.style.display = "none";
-    return;
-  }
-  briefPanel.style.display = "";
-  radarPanel.style.display = "";
+// ── Simon Willison ──
+function renderBlog(sources) {
+  const blog = sources.find(
+    (s) => s.source === "Simon Willison" && s.status === "ok",
+  );
+  const items = blog?.data?.items || [];
+  document.getElementById("blogCount").textContent = items.length;
 
-  let bHtml = "";
+  document.getElementById("blogBody").innerHTML = items
+    .slice(0, 15)
+    .map(
+      (i) => `
+  <div class="news-item">
+    <div class="news-title"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a></div>
+    <div class="news-meta">
+      ${i.author ? `<span>${esc(i.author)}</span>` : ""}
+      <span>${timeAgo(i.published)}</span>
+    </div>
+    ${i.description ? `<div class="news-meta" style="opacity:0.7">${esc(i.description)}</div>` : ""}
+  </div>
+`,
+    )
+    .join("");
+}
+
+// ── Analysis ──
+function activeFilter() {
+  const active = document.querySelector(".nav-pill.active");
+  return active?.dataset?.filter || "all";
+}
+
+function buildBriefingHtml(analysis) {
+  let html = "";
   if (analysis.summary) {
-    bHtml += `<div class="analysis-summary">${esc(analysis.summary)}</div>`;
+    html += `<div class="analysis-summary">${esc(analysis.summary)}</div>`;
   }
 
   if (analysis.trends?.length) {
-    bHtml += `<div class="section-label">Emerging Trends</div>`;
-    bHtml += `<div style="margin-bottom:14px">${analysis.trends.map((t) => `<span class="trend-item">${esc(t)}</span>`).join("")}</div>`;
+    html += `<div class="section-label">Emerging Trends</div>`;
+    const trendSpans = analysis.trends
+      .map((t) => `<span class="trend-item">${esc(t)}</span>`)
+      .join("");
+    html += `<div style="margin-bottom:14px">${trendSpans}</div>`;
   }
 
   if (analysis.topStories?.length) {
-    bHtml += `<div class="section-label">Top Stories</div>`;
+    html += `<div class="section-label">Top Stories</div>`;
     for (const s of analysis.topStories) {
       const imp = s.impact || "medium";
       const headlineText = esc(s.headline);
       const headline = s.url
         ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${headlineText}</a>`
         : headlineText;
-      bHtml += `<div class="analysis-story">
+      html += `<div class="analysis-story">
         <div class="analysis-headline">
           <span class="impact-badge ${imp}">${imp}</span>
           ${headline}
@@ -720,42 +1005,46 @@ function renderAnalysis(analysis) {
       </div>`;
     }
   }
-  document.getElementById("analysisBody").innerHTML = bHtml;
+  return html;
+}
 
-  let rHtml = "";
+const RADAR_STATUS_META = {
+  released: {
+    color: "var(--green)",
+    bg: "rgba(0,230,118,.15)",
+    label: "RELEASED",
+  },
+  announced: {
+    color: "var(--amber)",
+    bg: "rgba(255,193,7,.15)",
+    label: "ANNOUNCED",
+  },
+  rumored: {
+    color: "var(--pink)",
+    bg: "rgba(255,128,171,.15)",
+    label: "RUMORED",
+  },
+  "in-development": {
+    color: "var(--blue)",
+    bg: "rgba(68,138,255,.15)",
+    label: "IN DEV",
+  },
+};
+
+function buildRadarHtml(analysis) {
+  let html = "";
   if (analysis.modelRadar?.length) {
-    rHtml += `<div class="section-label">Model Radar</div>`;
-    const statusMeta = {
-      released: {
-        color: "var(--green)",
-        bg: "rgba(0,230,118,.15)",
-        label: "RELEASED",
-      },
-      announced: {
-        color: "var(--amber)",
-        bg: "rgba(255,193,7,.15)",
-        label: "ANNOUNCED",
-      },
-      rumored: {
-        color: "var(--pink)",
-        bg: "rgba(255,128,171,.15)",
-        label: "RUMORED",
-      },
-      "in-development": {
-        color: "var(--blue)",
-        bg: "rgba(68,138,255,.15)",
-        label: "IN DEV",
-      },
-    };
+    html += `<div class="section-label">Model Radar</div>`;
     document.getElementById("radarCount").textContent =
       analysis.modelRadar.length + (analysis.signals?.length || 0);
     for (const m of analysis.modelRadar) {
-      const meta = statusMeta[m.status] || statusMeta["in-development"];
+      const meta =
+        RADAR_STATUS_META[m.status] || RADAR_STATUS_META["in-development"];
       const nameText = esc(m.name);
       const nameHtml = m.url
         ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${nameText}</a>`
         : nameText;
-      rHtml += `<div class="radar-card">
+      html += `<div class="radar-card">
         <div class="radar-status" style="background:${meta.color};box-shadow:0 0 6px ${meta.color}"></div>
         <div class="radar-info">
           <div class="radar-name">${nameHtml}</div>
@@ -768,21 +1057,196 @@ function renderAnalysis(analysis) {
   }
 
   if (analysis.signals?.length) {
-    rHtml += `<div class="section-label" style="margin-top:12px">Signals</div>`;
+    html += `<div class="section-label" style="margin-top:12px">Signals</div>`;
     for (const s of analysis.signals) {
       const conf = s.confidence || "low";
       const sigText = esc(s.signal);
       const sigContent = s.url
         ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${sigText}</a>`
         : sigText;
-      rHtml += `<div class="signal-item">
+      html += `<div class="signal-item">
         <span class="signal-conf conf-${conf}">${esc(conf)}</span>
         <div class="signal-text">${sigContent}<span class="signal-source">${esc(s.source)}</span></div>
       </div>`;
     }
   }
-  document.getElementById("radarBody").innerHTML = rHtml;
+  return html;
 }
+
+function renderAnalysis(analysis) {
+  const briefPanel = document.getElementById("analysisPanel");
+  const radarPanel = document.getElementById("radarPanel");
+  if (!analysis) {
+    briefPanel.style.display = "none";
+    radarPanel.style.display = "none";
+    return;
+  }
+  briefPanel.style.display = "";
+  radarPanel.style.display = "";
+
+  document.getElementById("analysisBody").innerHTML =
+    buildBriefingHtml(analysis);
+  document.getElementById("radarBody").innerHTML = buildRadarHtml(analysis);
+}
+
+// ── Weekly Digest ──
+let lastDigest = null;
+
+async function fetchDigest() {
+  try {
+    const res = await fetch("/api/digest");
+    if (res.ok) {
+      const digest = await res.json();
+      renderDigest(digest);
+    }
+  } catch {
+    /* no digest available */
+  }
+}
+
+function renderDigestHighlights(highlights) {
+  let html = `<div class="digest-section-title">Key Highlights</div><div class="digest-highlights">`;
+  for (const h of highlights) {
+    const imp = h.impact || "medium";
+    const titleText = esc(h.title);
+    const titleHtml = h.url
+      ? `<a href="${esc(h.url)}" target="_blank" rel="noopener">${titleText}</a>`
+      : titleText;
+    html += `<div class="digest-highlight-card">
+      <div class="highlight-head">
+        <span class="impact-badge ${imp}">${imp}</span>
+        <span class="highlight-title">${titleHtml}</span>
+      </div>
+      <div class="highlight-body">${esc(h.body)}</div>
+      ${h.category ? `<span class="highlight-category">${esc(h.category)}</span>` : ""}
+    </div>`;
+  }
+  return html + `</div>`;
+}
+
+function renderDigestModels(models) {
+  let html = `<div class="digest-section-title">Model & Tool Updates</div><div class="digest-models">`;
+  for (const m of models) {
+    const nameText = esc(m.name);
+    const nameHtml = m.url
+      ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${nameText}</a>`
+      : nameText;
+    html += `<div class="digest-model-row">
+      <span class="model-name">${nameHtml}</span>
+      <span class="model-org">${esc(m.org)}</span>
+      <span class="model-summary">${esc(m.summary)}</span>
+    </div>`;
+  }
+  return html + `</div>`;
+}
+
+function renderDigestPapers(papers) {
+  let html = `<div class="digest-section-title">Paper Picks</div><div class="digest-papers">`;
+  for (const p of papers) {
+    const pTitle = esc(p.title);
+    const pHtml = p.url
+      ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${pTitle}</a>`
+      : pTitle;
+    html += `<div class="digest-paper">
+      <div class="paper-title">${pHtml}</div>
+      <div class="paper-authors">${esc(p.authors)}</div>
+      <div class="paper-insight">${esc(p.insight)}</div>
+    </div>`;
+  }
+  return html + `</div>`;
+}
+
+function renderDigest(digest) {
+  lastDigest = digest;
+  const panel = document.getElementById("digestPanel");
+  const body = document.getElementById("digestBody");
+  const meta = document.getElementById("digestMeta");
+  if (!digest) return;
+
+  // Only show the digest panel if the digest filter is active
+  const filter = activeFilter();
+  panel.style.display = filter === "digest" ? "" : "none";
+  meta.textContent = digest.weekId
+    ? `${digest.weekId} · Generated ${timeAgo(digest.generatedAt)}`
+    : "";
+
+  let html = `<div class="digest-toolbar">
+    <span class="digest-meta">${digest.generatedAt ? "Last generated: " + new Date(digest.generatedAt).toLocaleString() : ""}</span>
+    <button class="digest-generate-btn" id="digestRegenBtn">Regenerate Digest</button>
+  </div>`;
+
+  if (digest.tldr) {
+    html += `<div class="digest-tldr">${esc(digest.tldr)}</div>`;
+  }
+  if (digest.highlights?.length)
+    html += renderDigestHighlights(digest.highlights);
+  if (digest.modelUpdates?.length)
+    html += renderDigestModels(digest.modelUpdates);
+  if (digest.paperPicks?.length) html += renderDigestPapers(digest.paperPicks);
+
+  if (digest.communityBuzz?.length) {
+    html += `<div class="digest-section-title">Community Buzz</div><div class="digest-buzz">`;
+    for (const b of digest.communityBuzz) {
+      html += `<span class="digest-buzz-item">${esc(b)}</span>`;
+    }
+    html += `</div>`;
+  }
+
+  if (digest.lookAhead) {
+    html += `<div class="digest-section-title">Look Ahead</div>`;
+    html += `<div class="digest-lookahead">${esc(digest.lookAhead)}</div>`;
+  }
+
+  body.innerHTML = html;
+  document
+    .getElementById("digestRegenBtn")
+    ?.addEventListener("click", function () {
+      triggerDigestGeneration(this);
+    });
+}
+
+async function triggerDigestGeneration(btn) {
+  const body = document.getElementById("digestBody");
+
+  // Show loading animation
+  body.innerHTML = `<div class="digest-loading">
+    <div class="digest-spinner"></div>
+    <div class="digest-loading-text">Fetching 7 days of AI intelligence across ${data?.sweep?.sourcesTotal || "all"} sources…</div>
+  </div>`;
+
+  function showError(msg) {
+    if (lastDigest) {
+      renderDigest(lastDigest);
+    } else {
+      body.innerHTML = "";
+    }
+    const notice = document.createElement("div");
+    notice.className = "digest-notice";
+    notice.textContent = msg;
+    body.prepend(notice);
+    setTimeout(() => notice.remove(), 5000);
+  }
+
+  try {
+    const res = await fetch("/api/digest/generate", { method: "POST" });
+    if (res.ok) {
+      const digest = await res.json();
+      renderDigest(digest);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showError(err.error || "Failed to generate digest");
+    }
+  } catch {
+    showError("Network error — could not generate digest");
+  }
+}
+
+// Wire up the initial generate button
+document
+  .getElementById("digestGenerateBtn")
+  ?.addEventListener("click", function () {
+    triggerDigestGeneration(this);
+  });
 
 // ── Source Integrity (modal) ──
 let cachedSources = [];

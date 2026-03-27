@@ -147,15 +147,36 @@
           />
         </svg>
       </div>
+      <div class="loading-stage" id="loadingStage">INITIALIZING</div>
       <div class="loading-title">AI<span>PULSE</span></div>
-      <div class="loading-sub">Querying 10 intelligence sources…</div>
+      <div class="loading-sub">Preparing live intelligence sweep…</div>
+      <div class="loading-meta">
+        <span id="loadingPercent">0%</span>
+        <span id="loadingCounts">Waiting for sweep</span>
+      </div>
       <div class="loading-bar">
         <div class="loading-bar-inner" id="loadingBar"></div>
       </div>
+      <div class="loading-steps" id="loadingSteps" aria-live="polite"></div>
     </div>
 
     <!-- Header -->
     <header class="header">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <div class="header-left">
         <div class="logo">
           <div class="logo-mark">
@@ -187,6 +208,7 @@
           <button class="nav-pill" data-filter="research">Research</button>
           <button class="nav-pill" data-filter="code">Code</button>
           <button class="nav-pill" data-filter="community">Community</button>
+          <button class="nav-pill" data-filter="digest">Digest</button>
         </nav>
       </div>
       <div class="header-right">
@@ -204,6 +226,22 @@
           </svg>
           <span>Search…</span>
           <kbd>⌘K</kbd>
+        </button>
+        <button
+          class="collapse-all-btn"
+          id="collapseAllBtn"
+          title="Collapse / Expand all panels"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
         <button
           class="theme-toggle"
@@ -242,7 +280,7 @@
           <span class="status-sep">·</span>
           <span id="sweepTime">—</span>
           <span class="status-sep">·</span>
-          <span id="sourceCountText">0/10</span>
+          <span id="sourceCountText">0/?</span>
         </div>
       </div>
     </header>
@@ -444,7 +482,7 @@
       </div>
 
       <!-- Trending Models (Hugging Face) -->
-      <div class="panel col-4 fade-in" data-section="research">
+      <div class="panel col-6 fade-in" data-section="research">
         <div class="panel-header">
           <span class="panel-title"
             ><span class="panel-icon">🤗</span> Trending Models</span
@@ -455,7 +493,7 @@
       </div>
 
       <!-- ArXiv Papers -->
-      <div class="panel col-4 fade-in" data-section="research">
+      <div class="panel col-6 fade-in" data-section="research">
         <div class="panel-header">
           <span class="panel-title"
             ><span class="panel-icon">📄</span> Latest Papers</span
@@ -466,7 +504,7 @@
       </div>
 
       <!-- GitHub Trending -->
-      <div class="panel col-4 fade-in" data-section="code">
+      <div class="panel col-6 fade-in" data-section="code">
         <div class="panel-header">
           <span class="panel-title"
             ><span class="panel-icon">💻</span> GitHub Trending</span
@@ -474,6 +512,17 @@
           <span class="panel-count" id="reposCount">0</span>
         </div>
         <div class="panel-body" id="reposBody"></div>
+      </div>
+
+      <!-- Simon Willison -->
+      <div class="panel col-6 fade-in" data-section="code">
+        <div class="panel-header">
+          <span class="panel-title"
+            ><span class="panel-icon">✍️</span> Simon Willison</span
+          >
+          <span class="panel-count" id="blogCount">0</span>
+        </div>
+        <div class="panel-body" id="blogBody"></div>
       </div>
 
       <!-- Reddit -->
@@ -508,13 +557,44 @@
         </div>
         <div class="panel-body" id="phBody"></div>
       </div>
+
+      <!-- Weekly Digest -->
+      <div
+        class="panel col-12 fade-in digest-panel"
+        id="digestPanel"
+        data-section="digest"
+        style="display: none"
+      >
+        <div class="panel-header">
+          <span class="panel-title"
+            ><span class="panel-icon">📋</span> Weekly AI Digest</span
+          >
+          <span class="digest-meta" id="digestMeta"></span>
+        </div>
+        <div class="panel-body digest-body" id="digestBody">
+          <div class="digest-empty">
+            <p>No digest generated yet.</p>
+            <button class="digest-generate-btn" id="digestGenerateBtn">
+              Generate Weekly Digest
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <span>Built by <strong>AI Pulse</strong></span>
+      <span
+        >Built by
+        <a
+          href="https://www.linkedin.com/in/hugodendievel/"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><strong>Hugo Dendievel</strong></a
+        ></span
+      >
       <span class="footer-sep">·</span>
-      <span>10 sources</span>
+      <span id="footerSources">Sources</span>
       <span class="footer-sep">·</span>
       <span>Real-time intelligence</span>
     </footer>
