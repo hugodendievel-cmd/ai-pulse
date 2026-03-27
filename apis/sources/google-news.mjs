@@ -9,14 +9,11 @@ const QUERIES = [
   "AI+startup+funding",
 ];
 
-export async function briefing({ days = 3 } = {}) {
-  let when = "3d";
-  if (days <= 1) when = "1d";
-  else if (days > 3) when = "7d";
+export async function briefing() {
   const results = await Promise.allSettled(
     QUERIES.map((q) =>
       safeFetchText(
-        `https://news.google.com/rss/search?q=${q}+when:${when}&hl=en-US&gl=US&ceid=US:en`,
+        `https://news.google.com/rss/search?q=${q}+when:3d&hl=en-US&gl=US&ceid=US:en`,
         { timeout: 15000 },
       ),
     ),
@@ -44,6 +41,5 @@ export async function briefing({ days = 3 } = {}) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const d = await briefing();
-  console.log(JSON.stringify(d, null, 2));
+  briefing().then((d) => console.log(JSON.stringify(d, null, 2)));
 }
