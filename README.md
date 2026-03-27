@@ -2,7 +2,7 @@
 
 AI news intelligence dashboard — LLM releases, acquisitions, research papers, trending models, and community buzz. Your own AI analyst.
 
-10+ sources. One command. Zero cloud.
+10 sources. One command. Zero cloud.
 
 <img width="2535" height="1203" alt="Capture d’écran 2026-03-19 à 20 49 52" src="https://github.com/user-attachments/assets/6f8d6634-b2c3-4884-b8a7-dc3b3c10ffbe" />
 
@@ -70,7 +70,7 @@ A Jarvis-style HUD with:
 
 - Sweeps only run when someone is viewing the dashboard (saves LLM costs)
 - When a viewer arrives with stale data, an immediate sweep is triggered
-- All sources queried in parallel (~1–30s)
+- All 10 sources queried in parallel (~1–30s)
 - Real-time progress pushed via SSE
 
 ### Optional LLM Layer
@@ -100,7 +100,7 @@ Connect an LLM for enhanced analysis:
 
 ## API Keys Setup
 
-All sources work **without API keys**. Optional keys unlock higher rate limits and LLM analysis.
+All 10 sources work **without API keys**. Optional keys unlock higher rate limits and LLM analysis.
 
 ### LLM Provider (optional)
 
@@ -123,7 +123,7 @@ ai-pulse/
 ├── package.json               # Runtime: express only
 │
 ├── apis/
-│   ├── briefing.mjs           # Master orchestrator — all sources in parallel
+│   ├── briefing.mjs           # Master orchestrator — 10 sources in parallel
 │   ├── save-briefing.mjs      # CLI: save timestamped + latest.json
 │   ├── utils/
 │   │   ├── fetch.mjs          # safeFetch() — timeout, retries, abort
@@ -157,7 +157,7 @@ Runtime data is stored in your working directory under `.ai-pulse/`.
 
 - **Pure ESM** — every file is `.mjs` with explicit imports
 - **Minimal dependencies** — Express is the only runtime dependency
-- **Parallel execution** — `Promise.allSettled()` fires all sources simultaneously
+- **Parallel execution** — `Promise.allSettled()` fires all 10 sources simultaneously
 - **Graceful degradation** — missing keys produce empty arrays, not crashes
 - **npx-ready** — resolves package assets via `import.meta.url`, user data via `process.cwd()`
 - **Self-contained dashboard** — single HTML file with inline CSS/JS

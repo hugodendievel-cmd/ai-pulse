@@ -8,10 +8,6 @@ const parser = new XMLParser({
   cdataPropName: "__cdata",
   trimValues: true,
   parseTagValue: false,
-  processEntities: {
-    enabled: true,
-    maxTotalExpansions: 5000,
-  },
 });
 
 /**

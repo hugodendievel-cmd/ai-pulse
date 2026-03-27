@@ -30,8 +30,6 @@ html = html.replace(
   '<link rel="stylesheet" href="/style.css" />',
   `<style>${css}</style>`,
 );
-// Remove preconnect hints since fonts will be loaded externally
-html = html.replaceAll(/<link rel="preconnect"[^>]*\/>\s*/g, "");
 html = html.replace(
   '<script src="/app.js"></script>',
   `<script>${js}</script>`,
