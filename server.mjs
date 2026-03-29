@@ -2,6 +2,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -20,6 +21,11 @@ import log from "./lib/logger.mjs";
 import { createSweepProgressTracker } from "./lib/sweep-progress.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Cache-busting version tag derived from package.json
+const PKG_VERSION = JSON.parse(
+  readFileSync(resolve(__dirname, "package.json"), "utf-8"),
+).version;
 
 const PORT = Number.parseInt(process.env.PORT || "3200", 10);
 const REFRESH_MS =
@@ -87,6 +93,17 @@ app.use(
 );
 
 app.use(express.json());
+
+// ── Serve index.html with cache-busted asset URLs ──
+app.get("/", (_req, res) => {
+  const htmlPath = resolve(__dirname, "dashboard", "public", "index.html");
+  let html = readFileSync(htmlPath, "utf-8");
+  html = html.replace(/\.css"/g, `.css?v=${PKG_VERSION}"`);
+  html = html.replace(/\.js"/g, `.js?v=${PKG_VERSION}"`);
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
+});
 
 // ── Static files with cache control ──
 const isDev = process.env.NODE_ENV !== "production";
