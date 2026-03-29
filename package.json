@@ -27,7 +27,10 @@
         "brief:save": "node apis/save-briefing.mjs",
         "diag": "node diag.mjs",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "release:patch": "npm version patch && git push --follow-tags",
+        "release:minor": "npm version minor && git push --follow-tags",
+        "release:major": "npm version major && git push --follow-tags"
     },
     "keywords": [
         "ai",
