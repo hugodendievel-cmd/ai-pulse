@@ -1037,7 +1037,7 @@ html:not(.light) .icon-moon {
 
 .ticker-inner {
   display: inline-block;
-  animation: scroll-left 300s linear infinite;
+  animation: scroll-left 450s linear infinite;
 }
 
 .ticker-inner:hover {
@@ -2607,24 +2607,10 @@ html.light .theme-toggle .icon-moon {
   }
 }
 
-/* ── CSS-only ticker (fallback if JS doubling fails) ── */
-.ticker {
-  overflow: hidden;
-  position: relative;
-}
-.ticker-inner {
-  display: inline-flex;
-  gap: 32px;
-  white-space: nowrap;
-  animation: ticker-scroll 90s linear infinite;
-  will-change: transform;
-}
+/* Ticker: keep original 300s scroll-left animation (see line 1038).
+   Pause on hover of the whole ticker, not just inner. */
 .ticker:hover .ticker-inner {
   animation-play-state: paused;
-}
-@keyframes ticker-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
 }
 
 /* ── Terminal theme (amber on black, Bloomberg-style) ── */
