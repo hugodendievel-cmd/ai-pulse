@@ -4,19 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Pulse — Intelligence Dashboard</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='35%25'%3E%3Cstop offset='0%25' stop-color='%23818cf8'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='5' fill='rgba(255,255,255,0.9)'/%3E%3Ccircle cx='32' cy='14' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Ccircle cx='48' cy='23' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Ccircle cx='48' cy='41' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Ccircle cx='32' cy='50' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Ccircle cx='16' cy='41' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Ccircle cx='16' cy='23' r='3' fill='rgba(255,255,255,0.7)'/%3E%3Cg stroke='rgba(255,255,255,0.4)' stroke-width='1.5'%3E%3Cline x1='32' y1='27' x2='32' y2='17'/%3E%3Cline x1='36' y1='29' x2='45' y2='25'/%3E%3Cline x1='36' y1='35' x2='45' y2='39'/%3E%3Cline x1='32' y1='37' x2='32' y2='47'/%3E%3Cline x1='28' y1='35' x2='19' y2='39'/%3E%3Cline x1='28' y1='29' x2='19' y2='25'/%3E%3C/g%3E%3C/svg%3E"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="description" content="AI Pulse — real-time intelligence dashboard tracking LLM releases, papers, models, and community signals across 12 sources." />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Icon Sprite (reused via <use>) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="ic-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/>
+          <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/>
+        </symbol>
+        <symbol id="ic-radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 17.9 14"/><path d="M12 12h.01"/>
+        </symbol>
+        <symbol id="ic-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+        </symbol>
+        <symbol id="ic-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+        </symbol>
+        <symbol id="ic-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21 16-9 5-9-5V8l9-5 9 5z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+        </symbol>
+        <symbol id="ic-paper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>
+        </symbol>
+        <symbol id="ic-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+        </symbol>
+        <symbol id="ic-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+        </symbol>
+        <symbol id="ic-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </symbol>
+        <symbol id="ic-hexagon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </symbol>
+        <symbol id="ic-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+        </symbol>
+        <symbol id="ic-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </symbol>
+      </defs>
+    </svg>
+
     <!-- Loading Screen -->
     <div class="loading-screen" id="loading">
       <div class="loading-orb">
@@ -228,9 +264,21 @@
           <kbd>⌘K</kbd>
         </button>
         <button
+          class="kbd-help-btn"
+          id="kbdHelpBtn"
+          title="Keyboard shortcuts (?)"
+          aria-label="Show keyboard shortcuts"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+          </svg>
+        </button>
+        <button
           class="collapse-all-btn"
           id="collapseAllBtn"
           title="Collapse / Expand all panels"
+          aria-label="Collapse or expand all panels"
         >
           <svg
             width="14"
@@ -247,6 +295,8 @@
           class="theme-toggle"
           id="themeToggle"
           title="Toggle light/dark mode"
+          aria-label="Toggle light or dark mode"
+          aria-pressed="false"
         >
           <svg
             class="icon-sun"
@@ -274,12 +324,12 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
         </button>
-        <div class="status-badge" id="sourceCount">
-          <span class="status-dot loading" id="statusDot"></span>
+        <div class="status-badge" id="sourceCount" role="status" aria-live="polite">
+          <span class="status-dot loading" id="statusDot" aria-hidden="true"></span>
           <span id="statusText">INIT</span>
-          <span class="status-sep">·</span>
+          <span class="status-sep" aria-hidden="true">·</span>
           <span id="sweepTime">—</span>
-          <span class="status-sep">·</span>
+          <span class="status-sep" aria-hidden="true">·</span>
           <span id="sourceCountText">0/?</span>
         </div>
       </div>
@@ -436,7 +486,7 @@
       >
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🧠</span> AI Briefing</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-brain"/></svg> AI Briefing</span
           >
           <span class="panel-count" id="analysisProvider"></span>
         </div>
@@ -452,9 +502,9 @@
       >
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">📡</span> Radar</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-radar"/></svg> Radar</span
           >
-          <span class="panel-count" id="radarCount">0</span>
+          <span class="panel-count" id="radarCount">—</span>
         </div>
         <div class="panel-body" id="radarBody"></div>
       </div>
@@ -463,9 +513,9 @@
       <div class="panel col-6 fade-in" data-section="news">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🔥</span> Trending</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-flame"/></svg> Trending</span
           >
-          <span class="panel-count" id="trendingCount">0</span>
+          <span class="panel-count" id="trendingCount">—</span>
         </div>
         <div class="panel-body" id="trendingBody"></div>
       </div>
@@ -474,9 +524,9 @@
       <div class="panel col-6 fade-in" data-section="news">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🆕</span> Newest</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-sparkles"/></svg> Newest</span
           >
-          <span class="panel-count" id="newsCount">0</span>
+          <span class="panel-count" id="newsCount">—</span>
         </div>
         <div class="panel-body" id="newsBody"></div>
       </div>
@@ -485,9 +535,9 @@
       <div class="panel col-6 fade-in" data-section="research">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🤗</span> Trending Models</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-cube"/></svg> Trending Models</span
           >
-          <span class="panel-count" id="modelsCount">0</span>
+          <span class="panel-count" id="modelsCount">—</span>
         </div>
         <div class="panel-body" id="modelsBody"></div>
       </div>
@@ -496,9 +546,9 @@
       <div class="panel col-6 fade-in" data-section="research">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">📄</span> Latest Papers</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-paper"/></svg> Latest Papers</span
           >
-          <span class="panel-count" id="papersCount">0</span>
+          <span class="panel-count" id="papersCount">—</span>
         </div>
         <div class="panel-body" id="papersBody"></div>
       </div>
@@ -507,9 +557,9 @@
       <div class="panel col-6 fade-in" data-section="code">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">💻</span> GitHub Trending</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-code"/></svg> GitHub Trending</span
           >
-          <span class="panel-count" id="reposCount">0</span>
+          <span class="panel-count" id="reposCount">—</span>
         </div>
         <div class="panel-body" id="reposBody"></div>
       </div>
@@ -518,9 +568,9 @@
       <div class="panel col-6 fade-in" data-section="code">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">✍️</span> Simon Willison</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-pen"/></svg> Simon Willison</span
           >
-          <span class="panel-count" id="blogCount">0</span>
+          <span class="panel-count" id="blogCount">—</span>
         </div>
         <div class="panel-body" id="blogBody"></div>
       </div>
@@ -529,9 +579,9 @@
       <div class="panel col-4 fade-in" data-section="community">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">💬</span> Reddit</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-chat"/></svg> Reddit</span
           >
-          <span class="panel-count" id="redditCount">0</span>
+          <span class="panel-count" id="redditCount">—</span>
         </div>
         <div class="panel-body" id="redditBody"></div>
       </div>
@@ -540,9 +590,9 @@
       <div class="panel col-4 fade-in" data-section="community">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🔶</span> Hacker News</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-hexagon"/></svg> Hacker News</span
           >
-          <span class="panel-count" id="hnCount">0</span>
+          <span class="panel-count" id="hnCount">—</span>
         </div>
         <div class="panel-body" id="hnBody"></div>
       </div>
@@ -551,9 +601,9 @@
       <div class="panel col-4 fade-in" data-section="community">
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">🚀</span> Product Hunt AI</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-rocket"/></svg> Product Hunt AI</span
           >
-          <span class="panel-count" id="phCount">0</span>
+          <span class="panel-count" id="phCount">—</span>
         </div>
         <div class="panel-body" id="phBody"></div>
       </div>
@@ -567,7 +617,7 @@
       >
         <div class="panel-header">
           <span class="panel-title"
-            ><span class="panel-icon">📋</span> Weekly AI Digest</span
+            ><svg class="panel-icon" width="16" height="16" aria-hidden="true" focusable="false"><use href="#ic-list"/></svg> Weekly AI Digest</span
           >
           <span class="digest-meta" id="digestMeta"></span>
         </div>
@@ -599,6 +649,22 @@
       <span>Real-time intelligence</span>
     </footer>
 
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="kbd-overlay" id="kbdOverlay" role="dialog" aria-modal="true" aria-labelledby="kbdTitle">
+      <div class="kbd-modal">
+        <h3 id="kbdTitle">
+          <span>Keyboard shortcuts</span>
+          <button class="kbd-close" id="kbdClose" aria-label="Close">&times;</button>
+        </h3>
+        <div class="kbd-row"><span>Open command palette / search</span><span class="kbd-combo"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="kbd-row"><span>Close overlay / modal</span><span class="kbd-combo"><kbd>Esc</kbd></span></div>
+        <div class="kbd-row"><span>Toggle light / dark theme</span><span class="kbd-combo"><kbd>T</kbd></span></div>
+        <div class="kbd-row"><span>Toggle terminal theme</span><span class="kbd-combo"><kbd>Shift</kbd><kbd>T</kbd></span></div>
+        <div class="kbd-row"><span>Collapse / expand all panels</span><span class="kbd-combo"><kbd>C</kbd></span></div>
+        <div class="kbd-row"><span>Show this help</span><span class="kbd-combo"><kbd>?</kbd></span></div>
+      </div>
+    </div>
+
     <!-- Source Status Modal -->
     <div class="source-modal-overlay" id="sourceModal">
       <div class="source-modal">
@@ -610,6 +676,6 @@
       </div>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

@@ -187,17 +187,73 @@ function hideLoading() {
   );
 }
 
-// ── Theme Toggle ──
-(function initTheme() {
-  const saved = localStorage.getItem("ai-pulse-theme");
-  if (saved === "light") document.documentElement.classList.add("light");
+// ── Theme Toggle (dark ⇄ light, plus terminal via Shift+T) ──
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.classList.remove("light", "terminal");
+  if (theme === "light") root.classList.add("light");
+  else if (theme === "terminal") root.classList.add("terminal");
+  localStorage.setItem("ai-pulse-theme", theme);
   const btn = document.getElementById("themeToggle");
-  btn.addEventListener("click", () => {
-    document.documentElement.classList.toggle("light");
-    localStorage.setItem(
-      "ai-pulse-theme",
-      document.documentElement.classList.contains("light") ? "light" : "dark",
-    );
+  if (btn) btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+}
+(function initTheme() {
+  const saved = localStorage.getItem("ai-pulse-theme") || "dark";
+  applyTheme(saved);
+  const btn = document.getElementById("themeToggle");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const current = document.documentElement.classList.contains("light")
+        ? "light"
+        : document.documentElement.classList.contains("terminal")
+          ? "terminal"
+          : "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+  }
+})();
+
+// ── Keyboard shortcuts modal ──
+(function initKeyboardHelp() {
+  const overlay = document.getElementById("kbdOverlay");
+  const openBtn = document.getElementById("kbdHelpBtn");
+  const closeBtn = document.getElementById("kbdClose");
+  if (!overlay) return;
+  const show = () => overlay.classList.add("active");
+  const hide = () => overlay.classList.remove("active");
+  if (openBtn) openBtn.addEventListener("click", show);
+  if (closeBtn) closeBtn.addEventListener("click", hide);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) hide();
+  });
+  document.addEventListener("keydown", (e) => {
+    const inInput =
+      e.target &&
+      (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
+    if (inInput) return;
+    if (e.key === "Escape" && overlay.classList.contains("active")) {
+      hide();
+      return;
+    }
+    if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+      e.preventDefault();
+      overlay.classList.contains("active") ? hide() : show();
+    } else if (e.key === "T" && e.shiftKey) {
+      e.preventDefault();
+      applyTheme(
+        document.documentElement.classList.contains("terminal")
+          ? "dark"
+          : "terminal",
+      );
+    } else if (e.key === "t" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      applyTheme(
+        document.documentElement.classList.contains("light") ? "dark" : "light",
+      );
+    } else if (e.key === "c" && !e.metaKey && !e.ctrlKey) {
+      const btn = document.getElementById("collapseAllBtn");
+      if (btn) btn.click();
+    }
   });
 })();
 

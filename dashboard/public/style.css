@@ -1,6 +1,25 @@
 /* ═══════════════════════════════════════════════════════════
    AI PULSE — Premium Intelligence Dashboard
-   Design System v2.0
+   Design System v2.1
+
+   TABLE OF CONTENTS
+   ─────────────────────────────────────────────────────────
+   1.  Reset & Base
+   2.  Design Tokens (:root)
+   3.  Light Theme Overrides
+   4.  Loading Screen
+   5.  Header + Navigation
+   6.  Ticker
+   7.  Stats Bar
+   8.  Dashboard Grid + Panels
+   9.  News / Models / Papers / Repos cards
+   10. Analysis / Radar
+   11. Search Command Palette
+   12. Source Modal
+   13. Footer
+   14. Digest Panel
+   15. v2.1 — A11y, Reduced Motion, Terminal Theme,
+       CSS-only Ticker, Keyboard Modal
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Reset & Base ── */
@@ -1320,7 +1339,11 @@ html:not(.light) .icon-moon {
 }
 
 .panel-icon {
-  font-size: 0.9rem;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--accent2);
+  vertical-align: -2px;
 }
 
 .panel-count {
@@ -2392,4 +2415,259 @@ html:not(.light) .icon-moon {
   font-size: 0.75rem;
   color: var(--text-dim);
   font-family: "JetBrains Mono", monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   v2.1 — Accessibility, Reduced Motion, Terminal Theme,
+          Extra Breakpoints, CSS-only Ticker, Grid Utilities
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Accessibility: visible focus ring for keyboard users ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Keyboard help button ── */
+.kbd-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.kbd-help-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Keyboard shortcuts modal ── */
+.kbd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+.kbd-overlay.active {
+  display: flex;
+}
+.kbd-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.kbd-modal h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kbd-modal h3 .kbd-close {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.kbd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.kbd-row:last-child {
+  border-bottom: 0;
+}
+.kbd-row kbd {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text);
+  box-shadow: 0 1px 0 var(--border);
+}
+.kbd-row .kbd-combo {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ticker-inner {
+    animation: none !important;
+  }
+  .loading-orb,
+  .loading-bar-inner,
+  .fade-in {
+    animation: none !important;
+  }
+}
+
+/* ── Theme toggle: swap sun/moon via CSS ── */
+.theme-toggle .icon-moon,
+html.light .theme-toggle .icon-sun {
+  display: none;
+}
+.theme-toggle .icon-sun,
+html.light .theme-toggle .icon-moon {
+  display: inline-block;
+}
+
+/* ── Panel count: dim the "—" empty state ── */
+.panel-count {
+  transition: color 0.2s;
+}
+.panel-count:empty::before {
+  content: "—";
+  color: var(--dim);
+}
+
+/* ── Grid utility (alongside legacy col-N classes) ── */
+.panel[class*="col-"] { grid-column: span var(--col-span, 12); }
+.panel.col-1  { --col-span: 1; }
+.panel.col-2  { --col-span: 2; }
+.panel.col-3  { --col-span: 3; }
+.panel.col-4  { --col-span: 4; }
+.panel.col-5  { --col-span: 5; }
+.panel.col-6  { --col-span: 6; }
+.panel.col-7  { --col-span: 7; }
+.panel.col-8  { --col-span: 8; }
+.panel.col-9  { --col-span: 9; }
+.panel.col-10 { --col-span: 10; }
+.panel.col-11 { --col-span: 11; }
+.panel.col-12 { --col-span: 12; }
+
+/* ── Extra responsive breakpoint: tablet / 13" laptop ── */
+@media (max-width: 1024px) {
+  .panel.col-4 { --col-span: 6; }
+  .panel.col-8 { --col-span: 12; }
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .header-nav { display: none; }
+}
+
+@media (min-width: 1600px) {
+  .dashboard {
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ── CSS-only ticker (fallback if JS doubling fails) ── */
+.ticker {
+  overflow: hidden;
+  position: relative;
+}
+.ticker-inner {
+  display: inline-flex;
+  gap: 32px;
+  white-space: nowrap;
+  animation: ticker-scroll 90s linear infinite;
+  will-change: transform;
+}
+.ticker:hover .ticker-inner {
+  animation-play-state: paused;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Terminal theme (amber on black, Bloomberg-style) ── */
+html.terminal {
+  --bg:  #0a0a00;
+  --bg2: #121200;
+  --bg3: #1a1a00;
+  --bg4: #242400;
+  --border:  rgba(251, 191, 36, 0.12);
+  --border2: rgba(251, 191, 36, 0.25);
+  --accent:  #fbbf24;
+  --accent2: #fcd34d;
+  --cyan:   #facc15;
+  --green:  #a3e635;
+  --amber:  #fbbf24;
+  --red:    #f87171;
+  --blue:   #fde047;
+  --purple: #fdba74;
+  --pink:   #fb923c;
+  --orange: #fbbf24;
+  --text:  #fde68a;
+  --text2: #fcd34d;
+  --muted: #a16207;
+  --dim:   #713f12;
+  --glass: rgba(251, 191, 36, 0.03);
+  --glow:  0 0 20px rgba(251, 191, 36, 0.25);
+  --font:  "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+}
+html.terminal body {
+  background: var(--bg);
+}
+html.terminal .panel-title,
+html.terminal .news-title a,
+html.terminal .model-name a,
+html.terminal .paper-title a,
+html.terminal .repo-name a {
+  color: var(--accent);
+}
+html.terminal .panel {
+  border-color: var(--border2);
+  box-shadow: none;
+}
+html.terminal .ticker-item a,
+html.terminal .news-title a:hover {
+  color: var(--text);
 }
