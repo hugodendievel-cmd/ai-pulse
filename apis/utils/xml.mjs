@@ -10,7 +10,7 @@ const parser = new XMLParser({
   parseTagValue: false,
   processEntities: {
     enabled: true,
-    maxTotalExpansions: 5000,
+    maxTotalExpansions: 100_000,
   },
 });
 
