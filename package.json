@@ -1,7 +1,7 @@
 {
     "name": "ai-pulse",
     "version": "1.0.0",
-    "description": "AI news intelligence dashboard — LLM releases, acquisitions, rumors, papers. 10 sources, one command, zero cloud.",
+    "description": "AI news intelligence dashboard — LLM releases, acquisitions, rumors, papers. Multiple sources, one command, zero cloud.",
     "type": "module",
     "bin": {
         "ai-pulse": "./cli.mjs"
