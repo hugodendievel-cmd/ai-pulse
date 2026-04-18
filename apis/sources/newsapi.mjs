@@ -7,7 +7,7 @@ const QUERY =
   "artificial intelligence OR LLM OR large language model OR OpenAI OR generative AI";
 const PAGE_SIZE = 30;
 
-export async function briefing() {
+export async function briefing({ days } = {}) {
   const apiKey = env("NEWSAPI_KEY");
   if (!apiKey) {
     return {
@@ -24,6 +24,12 @@ export async function briefing() {
   url.searchParams.set("sortBy", "publishedAt");
   url.searchParams.set("pageSize", String(PAGE_SIZE));
   url.searchParams.set("language", "en");
+  if (days) {
+    const from = new Date(Date.now() - days * 86400000)
+      .toISOString()
+      .split("T")[0];
+    url.searchParams.set("from", from);
+  }
 
   const data = await safeFetch(url.toString(), {
     timeout: 15000,
@@ -49,5 +55,6 @@ export async function briefing() {
 
 // Standalone test
 if (import.meta.url === `file://${process.argv[1]}`) {
-  briefing().then((d) => console.log(JSON.stringify(d, null, 2)));
+  const d = await briefing();
+  console.log(JSON.stringify(d, null, 2));
 }
