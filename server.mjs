@@ -14,6 +14,7 @@ import {
 import "./apis/utils/env.mjs";
 import { computeDelta, getPrevious, pushSweep } from "./lib/delta/index.mjs";
 import { loadLatestDigest, saveDigest } from "./lib/digest/store.mjs";
+import { weekIdBrussels } from "./lib/digest/week-id.mjs";
 import { analyzeWithLLM } from "./lib/llm/analysis.mjs";
 import {
   incrementBudget,
@@ -158,20 +159,26 @@ app.get("/api/digest", (_req, res) => {
   res.json(digest);
 });
 
-app.post("/api/digest/generate", async (_req, res) => {
+app.post("/api/digest/generate", async (req, res) => {
   if (!llm) return res.status(503).json({ error: "LLM not configured" });
   if (digestGenerating)
     return res
       .status(409)
       .json({ error: "Digest generation already in progress" });
 
-  // Allow only one digest per day
-  const existing = loadLatestDigest();
-  if (existing?.generatedAt) {
-    const generatedDate = new Date(existing.generatedAt).toDateString();
-    if (generatedDate === new Date().toDateString()) {
-      return res.status(429).json({
-        error: "Digest already generated today. Try again tomorrow.",
+  // Once-per-ISO-week guard (Europe/Brussels). Skippable with ?force=1.
+  const force = req.query.force === "1";
+  if (!force) {
+    const latest = loadLatestDigest();
+    const currentWeekId = weekIdBrussels();
+    if (latest?.weekId === currentWeekId) {
+      return res.status(409).json({
+        error: `Digest already generated for ${currentWeekId}`,
+        existing: {
+          generatedAt: latest.generatedAt,
+          weekId: latest.weekId,
+          weekOf: latest.weekOf ?? null,
+        },
       });
     }
   }
