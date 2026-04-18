@@ -14,6 +14,19 @@ let postLoadGrace = false;
 
 setLoadingWidth(0);
 
+// Pull live source count from /api/health and update the loading sub-line
+// so the UI always reports the real N sources rather than a static literal.
+fetch("/api/health")
+  .then((r) => r.json())
+  .then((h) => {
+    if (loadingSub && h?.sourceCount) {
+      loadingSub.textContent = `Querying ${h.sourceCount} intelligence sources…`;
+    }
+  })
+  .catch(() => {
+    /* non-blocking: loading screen still shows fallback text */
+  });
+
 function setLoadingWidth(nextPct) {
   const boundedPct = Math.max(0, Math.min(100, nextPct));
   loadingBar.style.width = `${boundedPct}%`;

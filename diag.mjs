@@ -19,28 +19,37 @@ for (const [name, fn] of modules) {
   }
 }
 
-// Source imports
-const sources = [
-  "hackernews",
-  "arxiv",
-  "huggingface",
-  "github-trending",
-  "techcrunch",
-  "theverge",
-  "venturebeat",
-  "reddit",
-  "google-news",
-  "producthunt",
-];
-console.log(`\n  Sources:`);
-for (const s of sources) {
+// Source imports — driven by SOURCE_NAMES so diag stays in sync with briefing.mjs
+const { SOURCE_NAMES, SOURCE_COUNT } = await import("./apis/briefing.mjs");
+
+// Map human source names to their module filenames under apis/sources/.
+const NAME_TO_SLUG = {
+  "Hacker News": "hackernews",
+  ArXiv: "arxiv",
+  "Hugging Face": "huggingface",
+  "GitHub Trending": "github-trending",
+  TechCrunch: "techcrunch",
+  "The Verge": "theverge",
+  VentureBeat: "venturebeat",
+  Reddit: "reddit",
+  "Google News": "google-news",
+  NewsAPI: "newsapi",
+  "Product Hunt": "producthunt",
+  "Simon Willison": "simonwillison",
+};
+
+console.log(`\n  Sources (${SOURCE_COUNT} total):`);
+for (const name of SOURCE_NAMES) {
+  const slug = NAME_TO_SLUG[name];
   try {
-    await import(`./apis/sources/${s}.mjs`);
-    console.log(`    ${s}: ✓`);
+    if (!slug) throw new Error("no slug mapping");
+    await import(`./apis/sources/${slug}.mjs`);
+    console.log(`    ${name}: ✓`);
   } catch (err) {
-    console.log(`    ${s}: ✗ (${err.message})`);
+    console.log(`    ${name}: ✗ (${err.message})`);
   }
 }
+console.log(`  Total: ${SOURCE_COUNT} sources`);
 
 // Port check
 const port = process.env.PORT || 3200;
