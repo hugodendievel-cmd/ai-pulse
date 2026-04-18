@@ -161,4 +161,35 @@ describe("parseLlmJson", () => {
     });
     expect(result.topStories).toHaveLength(1);
   });
+
+  it("returns null gracefully when raw is null", () => {
+    const result = parseLlmJson(null, { required: ["summary"] });
+    expect(result).toBeNull();
+    expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("returns null gracefully when raw is undefined", () => {
+    const result = parseLlmJson(undefined, { required: ["summary"] });
+    expect(result).toBeNull();
+    expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("returns null gracefully when raw is an empty string", () => {
+    const result = parseLlmJson("", { required: ["summary"] });
+    expect(result).toBeNull();
+    expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("rejects top-level JSON arrays (not plain objects)", () => {
+    const result = parseLlmJson("[1, 2, 3]", { required: [] });
+    expect(result).toBeNull();
+    expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("does not leak prototype pollution via __proto__ in response", () => {
+    const raw = '{"summary":"s","__proto__":{"polluted":true}}';
+    parseLlmJson(raw, { required: ["summary"] });
+    // eslint-disable-next-line no-proto
+    expect({}.polluted).toBeUndefined();
+  });
 });
