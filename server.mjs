@@ -15,6 +15,11 @@ import "./apis/utils/env.mjs";
 import { computeDelta, getPrevious, pushSweep } from "./lib/delta/index.mjs";
 import { loadLatestDigest, saveDigest } from "./lib/digest/store.mjs";
 import { analyzeWithLLM } from "./lib/llm/analysis.mjs";
+import {
+  incrementBudget,
+  isBudgetExhausted,
+  loadBudget,
+} from "./lib/llm/budget.mjs";
 import { createLLMProvider } from "./lib/llm/index.mjs";
 import { generateWeeklyDigest } from "./lib/llm/weekly-digest.mjs";
 import log from "./lib/logger.mjs";
@@ -50,8 +55,6 @@ let sweepCount = 0;
 let lastSweepTime = null;
 let lastSweepDurationMs = null;
 let sourceStats = {}; // per-source success/failure counts
-let llmCallsToday = 0;
-let llmBudgetDay = new Date().toDateString();
 let sweepProgress = null;
 let sweepInProgress = false;
 
@@ -132,11 +135,15 @@ app.get("/api/health", (_req, res) => {
     sourceCount: SOURCE_COUNT,
     sources: currentData?.sweep?.sourcesTotal || 0,
     sseClients: sseClients.size,
-    llmBudget: {
-      callsToday: llmCallsToday,
-      dailyLimit: MAX_LLM_CALLS_PER_DAY,
-      remaining: Math.max(0, MAX_LLM_CALLS_PER_DAY - llmCallsToday),
-    },
+    llmBudget: (() => {
+      const b = isBudgetExhausted({ cap: MAX_LLM_CALLS_PER_DAY });
+      return {
+        callsToday: b.count,
+        dailyLimit: b.cap,
+        remaining: Math.max(0, b.cap - b.count),
+        ...(b.exhausted ? { skipReason: b.skipReason } : {}),
+      };
+    })(),
     sourceStats,
   });
 });
@@ -171,19 +178,15 @@ app.post("/api/digest/generate", async (_req, res) => {
 
   digestGenerating = true;
   try {
-    // Budget check
-    const today = new Date().toDateString();
-    if (today !== llmBudgetDay) {
-      llmCallsToday = 0;
-      llmBudgetDay = today;
-    }
-    if (llmCallsToday >= MAX_LLM_CALLS_PER_DAY) {
-      return res.status(429).json({ error: "Daily LLM budget exhausted" });
+    // Budget check (persisted, Brussels day boundary)
+    const budget = isBudgetExhausted({ cap: MAX_LLM_CALLS_PER_DAY });
+    if (budget.exhausted) {
+      return res.status(429).json({ error: budget.skipReason });
     }
 
     // Run a dedicated 7-day sweep across all sources
     const sweepData = await runDigestSweep();
-    llmCallsToday++;
+    incrementBudget();
     const digest = await generateWeeklyDigest(llm, sweepData);
     if (!digest)
       return res.status(500).json({ error: "Digest generation failed" });
@@ -291,30 +294,26 @@ async function runLLMAnalysis(sweepData) {
     };
   }
 
-  // Reset daily counter at midnight
-  const today = new Date().toDateString();
-  if (today !== llmBudgetDay) {
-    llmCallsToday = 0;
-    llmBudgetDay = today;
-  }
-
-  if (llmCallsToday >= MAX_LLM_CALLS_PER_DAY) {
+  // Budget check (persisted, Brussels day boundary — rolls over on read)
+  const budget = isBudgetExhausted({ cap: MAX_LLM_CALLS_PER_DAY });
+  if (budget.exhausted) {
     log.warn(
-      { llmCallsToday, limit: MAX_LLM_CALLS_PER_DAY },
+      { count: budget.count, cap: budget.cap },
       "Daily LLM call budget exhausted — skipping analysis",
     );
     return {
       analysis: null,
       state: "skipped",
-      detail: "Daily budget exhausted",
+      detail: budget.skipReason,
     };
   }
 
   try {
-    llmCallsToday++;
+    incrementBudget();
     const analysis = await analyzeWithLLM(llm, sweepData);
     if (analysis) {
-      log.info({ llmCallsToday }, "LLM analysis complete");
+      const { count } = loadBudget();
+      log.info({ llmCallsToday: count }, "LLM analysis complete");
       return {
         analysis,
         state: "ok",
@@ -412,6 +411,9 @@ async function boot() {
   } catch (err) {
     log.warn({ err: err.message }, "LLM init failed");
   }
+
+  const { count: budgetCount, day: budgetDay } = loadBudget();
+  log.info({ count: budgetCount, day: budgetDay }, "LLM budget loaded");
 
   server = app.listen(PORT, () => {
     console.log(`\n  ┌─────────────────────────────────────────┐`);
