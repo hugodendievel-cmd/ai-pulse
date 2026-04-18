@@ -62,3 +62,61 @@ export function sanitizeItem(item) {
   }
   return clean;
 }
+
+/**
+ * Sanitize all user-visible string fields in a weekly digest object.
+ * Walks the known schema; unknown top-level fields pass through unchanged.
+ * Safe to call if optional arrays (highlights, modelUpdates, etc.) are absent.
+ */
+export function sanitizeDigest(digest) {
+  if (!digest || typeof digest !== "object") return digest;
+
+  const clean = { ...digest };
+
+  // Top-level strings
+  if (digest.weekOf !== undefined) clean.weekOf = sanitizeText(digest.weekOf);
+  if (digest.tldr !== undefined) clean.tldr = sanitizeText(digest.tldr);
+  if (digest.lookAhead !== undefined)
+    clean.lookAhead = sanitizeText(digest.lookAhead);
+
+  // highlights[]: { title, body, category, impact, url }
+  if (Array.isArray(digest.highlights)) {
+    clean.highlights = digest.highlights.map((h) => ({
+      ...h,
+      title: sanitizeText(h.title),
+      body: sanitizeText(h.body),
+      category: sanitizeText(h.category),
+      impact: sanitizeText(h.impact),
+      url: sanitizeUrl(h.url),
+    }));
+  }
+
+  // modelUpdates[]: { name, org, summary, url }
+  if (Array.isArray(digest.modelUpdates)) {
+    clean.modelUpdates = digest.modelUpdates.map((m) => ({
+      ...m,
+      name: sanitizeText(m.name),
+      org: sanitizeText(m.org),
+      summary: sanitizeText(m.summary),
+      url: sanitizeUrl(m.url),
+    }));
+  }
+
+  // paperPicks[]: { title, authors, insight, url }
+  if (Array.isArray(digest.paperPicks)) {
+    clean.paperPicks = digest.paperPicks.map((p) => ({
+      ...p,
+      title: sanitizeText(p.title),
+      authors: sanitizeText(p.authors),
+      insight: sanitizeText(p.insight),
+      url: sanitizeUrl(p.url),
+    }));
+  }
+
+  // communityBuzz[]: plain strings
+  if (Array.isArray(digest.communityBuzz)) {
+    clean.communityBuzz = digest.communityBuzz.map((b) => sanitizeText(b));
+  }
+
+  return clean;
+}
