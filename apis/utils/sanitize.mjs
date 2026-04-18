@@ -81,36 +81,42 @@ export function sanitizeDigest(digest) {
 
   // highlights[]: { title, body, category, impact, url }
   if (Array.isArray(digest.highlights)) {
-    clean.highlights = digest.highlights.map((h) => ({
-      ...h,
-      title: sanitizeText(h.title),
-      body: sanitizeText(h.body),
-      category: sanitizeText(h.category),
-      impact: sanitizeText(h.impact),
-      url: sanitizeUrl(h.url),
-    }));
+    clean.highlights = digest.highlights
+      .filter((h) => h && typeof h === "object" && !Array.isArray(h))
+      .map((h) => ({
+        ...h,
+        title: sanitizeText(h.title),
+        body: sanitizeText(h.body),
+        category: sanitizeText(h.category),
+        impact: sanitizeText(h.impact),
+        url: sanitizeUrl(h.url),
+      }));
   }
 
   // modelUpdates[]: { name, org, summary, url }
   if (Array.isArray(digest.modelUpdates)) {
-    clean.modelUpdates = digest.modelUpdates.map((m) => ({
-      ...m,
-      name: sanitizeText(m.name),
-      org: sanitizeText(m.org),
-      summary: sanitizeText(m.summary),
-      url: sanitizeUrl(m.url),
-    }));
+    clean.modelUpdates = digest.modelUpdates
+      .filter((m) => m && typeof m === "object" && !Array.isArray(m))
+      .map((m) => ({
+        ...m,
+        name: sanitizeText(m.name),
+        org: sanitizeText(m.org),
+        summary: sanitizeText(m.summary),
+        url: sanitizeUrl(m.url),
+      }));
   }
 
   // paperPicks[]: { title, authors, insight, url }
   if (Array.isArray(digest.paperPicks)) {
-    clean.paperPicks = digest.paperPicks.map((p) => ({
-      ...p,
-      title: sanitizeText(p.title),
-      authors: sanitizeText(p.authors),
-      insight: sanitizeText(p.insight),
-      url: sanitizeUrl(p.url),
-    }));
+    clean.paperPicks = digest.paperPicks
+      .filter((p) => p && typeof p === "object" && !Array.isArray(p))
+      .map((p) => ({
+        ...p,
+        title: sanitizeText(p.title),
+        authors: sanitizeText(p.authors),
+        insight: sanitizeText(p.insight),
+        url: sanitizeUrl(p.url),
+      }));
   }
 
   // communityBuzz[]: plain strings

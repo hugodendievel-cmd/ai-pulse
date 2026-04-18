@@ -86,4 +86,29 @@ describe("sanitizeDigest", () => {
     expect(result.futureField).toBe("untouched");
     expect(result.nested).toEqual({ x: 1 });
   });
+
+  it("drops null/undefined entries inside known arrays without throwing", () => {
+    expect(() =>
+      sanitizeDigest({
+        highlights: [null, undefined],
+        modelUpdates: [null],
+        paperPicks: [undefined],
+      }),
+    ).not.toThrow();
+
+    const result = sanitizeDigest({
+      highlights: [
+        null,
+        {
+          title: "Real",
+          body: "ok",
+          category: "c",
+          impact: "i",
+          url: "https://example.com",
+        },
+      ],
+    });
+    expect(result.highlights).toHaveLength(1);
+    expect(result.highlights[0].title).toBe("Real");
+  });
 });
