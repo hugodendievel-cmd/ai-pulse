@@ -129,6 +129,7 @@ app.get("/api/health", (_req, res) => {
     lastSweep: lastSweepTime,
     lastSweepDurationMs,
     llm: llm ? `${llm.name}/${llm.model}` : "disabled",
+    sourceCount: SOURCE_COUNT,
     sources: currentData?.sweep?.sourcesTotal || 0,
     sseClients: sseClients.size,
     llmBudget: {
