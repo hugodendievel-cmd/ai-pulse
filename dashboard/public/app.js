@@ -1311,8 +1311,11 @@ async function triggerDigestGeneration(btn) {
         notice.textContent = `Already generated for this week · ${timeAgo(payload.existing.generatedAt)}`;
         document.getElementById("digestBody")?.prepend(notice);
         setTimeout(() => notice.remove(), 5000);
-      } else if (lastDigest) {
-        renderDigest(lastDigest);
+      } else {
+        // 409 without `existing` → the digestGenerating mutex fired (another
+        // generation is already in flight). Surface the server message so the
+        // user gets feedback instead of an empty silent render.
+        showError(payload.error || "Digest generation already in progress");
       }
     } else {
       const err = await res.json().catch(() => ({}));
