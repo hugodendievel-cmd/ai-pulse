@@ -1301,6 +1301,19 @@ async function triggerDigestGeneration(btn) {
     if (res.ok) {
       const digest = await res.json();
       renderDigest(digest);
+    } else if (res.status === 409) {
+      // Digest already exists for this ISO week — show it, don't show an error banner
+      const payload = await res.json().catch(() => ({}));
+      if (payload.existing) {
+        renderDigest({ ...lastDigest, ...payload.existing });
+        const notice = document.createElement("div");
+        notice.className = "digest-notice";
+        notice.textContent = `Already generated for this week · ${timeAgo(payload.existing.generatedAt)}`;
+        document.getElementById("digestBody")?.prepend(notice);
+        setTimeout(() => notice.remove(), 5000);
+      } else if (lastDigest) {
+        renderDigest(lastDigest);
+      }
     } else {
       const err = await res.json().catch(() => ({}));
       showError(err.error || "Failed to generate digest");
