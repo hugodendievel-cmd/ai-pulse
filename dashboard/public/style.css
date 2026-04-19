@@ -2612,6 +2612,14 @@ html.light .theme-toggle .icon-moon {
   .header-nav { display: none; }
 }
 
+/* ── Mobile override: full-width panels (must come AFTER the unconditional
+   .panel.col-X rules above, otherwise equal specificity + earlier source-order
+   loses, leaving e.g. .panel.col-6 at --col-span: 6 on mobile) ── */
+@media (max-width: 768px) {
+  .panel[class*="col-"] { --col-span: 12; }
+  .stats-bar { grid-template-columns: 1fr; }
+}
+
 @media (min-width: 1600px) {
   .dashboard {
     max-width: 1800px;
