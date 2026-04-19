@@ -273,6 +273,11 @@ function applyTheme(theme) {
 // ── Nav Filter ──
 function applyNavFilter() {
   const filter = activeFilter();
+  // Expose the active filter on the .dashboard container so CSS can scope
+  // tab-specific layout overrides (e.g. Community tab 2×2 grid, Code tab
+  // full-width) without affecting the All view.
+  const dashboard = document.querySelector(".dashboard");
+  if (dashboard) dashboard.dataset.filter = filter;
   document.querySelectorAll(".dashboard .panel").forEach((panel) => {
     const section = panel.dataset.section;
     if (section === "digest") {

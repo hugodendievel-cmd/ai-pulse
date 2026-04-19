@@ -1285,16 +1285,19 @@ html:not(.light) .icon-moon {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   background: var(--glass);
   cursor: pointer;
   user-select: none;
 }
 
+/* Pin the chevron-toggle to the right edge so the count (middle flex item)
+   stays snug next to the title instead of floating when the header is wider
+   than the title + count combined. */
 .panel-toggle {
   font-size: 0.65rem;
   color: var(--muted);
-  margin-left: 8px;
+  margin-left: auto;
   transition: transform 0.25s ease;
   display: inline-block;
 }
@@ -2610,6 +2613,39 @@ html.light .theme-toggle .icon-moon {
   .panel.col-8 { --col-span: 12; }
   .stats-bar { grid-template-columns: repeat(3, 1fr); }
   .header-nav { display: none; }
+}
+
+/* ── Tab-specific layout overrides — DESKTOP ONLY. Scoped to min-width:769px
+   so they don't fight the mobile override (which is a less-specific rule at
+   max-width:768px that needs to win unopposed there). The "All" view is
+   untouched at every width. ── */
+@media (min-width: 769px) {
+  /* Code tab: GitHub Trending is the only visible panel — let it span full
+     width instead of sitting at col-6 with half the row empty. */
+  .dashboard[data-filter="code"] .panel[data-section="code"] {
+    --col-span: 12;
+  }
+  /* Community tab: four panels laid out as a tidy 2×2 grid. Simon Willison
+     is col-6 by default; the other three community panels are col-4.
+     Promote all four to col-6 when Community is the active filter. */
+  .dashboard[data-filter="community"] .panel[data-section="community"] {
+    --col-span: 6;
+  }
+}
+
+/* ── Mobile override: full-width panels (must come AFTER the unconditional
+   .panel.col-X rules above, otherwise equal specificity + earlier source-order
+   loses, leaving e.g. .panel.col-6 at --col-span: 6 on mobile) ── */
+@media (max-width: 768px) {
+  .panel[class*="col-"] { --col-span: 12; }
+  .stats-bar { grid-template-columns: 1fr; }
+
+  /* Keyboard shortcuts button is useless without a physical keyboard and
+     overlaps the AIPULSE logo on narrow viewports — hide on mobile. */
+  .kbd-help-btn { display: none; }
+
+  /* ⌘K kbd hint in the search trigger is also meaningless on touch. */
+  .search-trigger kbd { display: none; }
 }
 
 @media (min-width: 1600px) {

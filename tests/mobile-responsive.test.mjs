@@ -37,4 +37,53 @@ describe("mobile-responsive panel stacking", () => {
     expect(block).toMatch(/\.col-6/);
     expect(block).toMatch(/\.col-8/);
   });
+
+  it("the system B mobile override appears AFTER the unconditional .panel.col-X rules (source order wins equal-specificity fight)", () => {
+    const unconditionalIdx = css.indexOf(".panel.col-6  { --col-span: 6; }");
+    expect(unconditionalIdx).toBeGreaterThan(-1);
+
+    // Find a 768px @media block that contains `.panel[class*="col-"] { --col-span: 12 }`
+    // AND appears after the unconditional rule.
+    const overrideRegex =
+      /@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.panel\[class\*=["']col-["']\][^}]*--col-span:\s*12/g;
+    let foundAfter = false;
+    for (const m of css.matchAll(overrideRegex)) {
+      if (m.index > unconditionalIdx) {
+        foundAfter = true;
+        break;
+      }
+    }
+    expect(foundAfter).toBe(true);
+  });
+
+  it("the 768px block stacks .stats-bar to a single column", () => {
+    const blocks = [...css.matchAll(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/g)]
+      .map((m) => m[1])
+      .join("\n");
+    expect(blocks).toMatch(/\.stats-bar\s*\{[^}]*grid-template-columns:\s*1fr/);
+  });
+
+  it("unconditional .panel-toggle rule pins the chevron to the right at ALL viewports (keeps count next to title on desktop too)", () => {
+    // Match the declaration inside the unconditional .panel-toggle rule.
+    expect(css).toMatch(
+      /\.panel-toggle\s*\{[^}]*margin-left:\s*auto/,
+    );
+  });
+
+  it("the 768px block hides kbd-help-btn and the ⌘K hint inside .search-trigger", () => {
+    const blocks = [...css.matchAll(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/g)]
+      .map((m) => m[1])
+      .join("\n");
+    expect(blocks).toMatch(/\.kbd-help-btn\s*\{[^}]*display:\s*none/);
+    expect(blocks).toMatch(/\.search-trigger\s+kbd\s*\{[^}]*display:\s*none/);
+  });
+
+  it("tab-scoped overrides exist for Code and Community (only the All view keeps the default layout)", () => {
+    expect(css).toMatch(
+      /\.dashboard\[data-filter=["']code["']\]\s+\.panel\[data-section=["']code["']\][^}]*--col-span:\s*12/,
+    );
+    expect(css).toMatch(
+      /\.dashboard\[data-filter=["']community["']\]\s+\.panel\[data-section=["']community["']\][^}]*--col-span:\s*6/,
+    );
+  });
 });
