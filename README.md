@@ -19,8 +19,8 @@ That's it. Opens at `http://localhost:3200`. On first run, a `.env` file is crea
 ### From source
 
 ```bash
-git clone <your-repo-url>
-cd ai-dashboard
+git clone https://github.com/hugodendievel-cmd/ai-pulse.git
+cd ai-pulse
 npm install
 npm start
 ```
