@@ -24,6 +24,7 @@ import {
 import { createLLMProvider } from "./lib/llm/index.mjs";
 import { generateWeeklyDigest } from "./lib/llm/weekly-digest.mjs";
 import log from "./lib/logger.mjs";
+import { shouldTriggerSweep } from "./lib/sweep-cooldown.mjs";
 import { createSweepProgressTracker } from "./lib/sweep-progress.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -228,18 +229,22 @@ app.get("/events", (req, res) => {
   });
   res.write("data: connected\n\n");
 
-  const dataAge = lastSweepTime
-    ? Date.now() - new Date(lastSweepTime).getTime()
-    : Infinity;
-  const isStale = dataAge > REFRESH_MS;
+  const now = Date.now();
+  const trigger = shouldTriggerSweep({
+    lastSweepTime,
+    now,
+    cooldownMs: REFRESH_MS,
+    sweepInProgress,
+  });
 
   if (sweepInProgress && sweepProgress) {
     // Sweep is live — send current progress snapshot for late joiners
     res.write(
       `data: ${JSON.stringify({ type: "progress", ...sweepProgress })}\n\n`,
     );
-  } else if (currentData && !isStale) {
-    // Data is fresh — send it immediately
+  } else if (currentData && !trigger) {
+    // Inside the cooldown window — replay cached data so the dashboard's
+    // catch-up animation renders briefly and then shows the briefing.
     res.write(
       `data: ${JSON.stringify({ type: "update", data: currentData })}\n\n`,
     );
@@ -247,13 +252,24 @@ app.get("/events", (req, res) => {
   sseClients.add(res);
   req.on("close", () => sseClients.delete(res));
 
-  // If data is stale, trigger a fresh sweep so the client waits on the loading screen
-  if (isStale && !sweepInProgress) {
+  // If cooldown has elapsed (or there's no data yet), trigger a fresh sweep
+  // so the client waits on the loading screen.
+  if (trigger) {
+    const sinceMs = lastSweepTime
+      ? now - new Date(lastSweepTime).getTime()
+      : null;
     log.info(
-      { ageMin: Math.round(dataAge / 60000) },
-      "Viewer arrived with stale data — triggering sweep",
+      { sinceMs },
+      "Viewer arrived — cooldown elapsed, triggering sweep",
     );
     sweep();
+  } else if (lastSweepTime && !sweepInProgress) {
+    const sinceMs = now - new Date(lastSweepTime).getTime();
+    const remainingMs = Math.max(0, REFRESH_MS - sinceMs);
+    log.debug(
+      { reason: "cooldown", sinceMs, remainingMs },
+      "Viewer arrived inside cooldown — skipping sweep trigger",
+    );
   }
 });
 
@@ -440,16 +456,31 @@ async function boot() {
 
   // First sweep after a short delay so SSE clients can connect
   setTimeout(sweep, 2000);
-  // Then every REFRESH_MS — but only if someone is watching and data is old enough.
-  // Skip iterations that land before the first sweep has ever completed.
+  // Then every REFRESH_MS — but only if someone is watching and the cooldown
+  // has elapsed. Skip iterations that land before the first sweep completes.
   setInterval(() => {
     if (!lastSweepTime) return; // first sweep hasn't finished yet
     if (sseClients.size === 0) {
       log.info("No active viewers — skipping sweep");
       return;
     }
-    const elapsed = Date.now() - new Date(lastSweepTime).getTime();
-    if (elapsed < REFRESH_MS) return;
+    const now = Date.now();
+    if (
+      !shouldTriggerSweep({
+        lastSweepTime,
+        now,
+        cooldownMs: REFRESH_MS,
+        sweepInProgress,
+      })
+    ) {
+      const sinceMs = now - new Date(lastSweepTime).getTime();
+      const remainingMs = Math.max(0, REFRESH_MS - sinceMs);
+      log.debug(
+        { reason: "cooldown", sinceMs, remainingMs },
+        "Interval tick skipped — cooldown not elapsed",
+      );
+      return;
+    }
     sweep();
   }, REFRESH_MS);
 }
