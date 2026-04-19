@@ -2012,6 +2012,11 @@ html:not(.light) .icon-moon {
     grid-column: span 12;
   }
 
+  /* System B: reset --col-span so the custom-property-driven grid also stacks */
+  .panel[class*="col-"] {
+    --col-span: 12;
+  }
+
   .dashboard {
     padding: 12px;
     gap: 12px;
