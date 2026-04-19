@@ -62,4 +62,19 @@ describe("mobile-responsive panel stacking", () => {
       .join("\n");
     expect(blocks).toMatch(/\.stats-bar\s*\{[^}]*grid-template-columns:\s*1fr/);
   });
+
+  it("the 768px block pins panel-toggle chevron to the right (keeps count next to title)", () => {
+    const blocks = [...css.matchAll(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/g)]
+      .map((m) => m[1])
+      .join("\n");
+    expect(blocks).toMatch(/\.panel-toggle\s*\{[^}]*margin-left:\s*auto/);
+  });
+
+  it("the 768px block hides kbd-help-btn and the ⌘K hint inside .search-trigger", () => {
+    const blocks = [...css.matchAll(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/g)]
+      .map((m) => m[1])
+      .join("\n");
+    expect(blocks).toMatch(/\.kbd-help-btn\s*\{[^}]*display:\s*none/);
+    expect(blocks).toMatch(/\.search-trigger\s+kbd\s*\{[^}]*display:\s*none/);
+  });
 });

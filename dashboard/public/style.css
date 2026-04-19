@@ -2618,6 +2618,18 @@ html.light .theme-toggle .icon-moon {
 @media (max-width: 768px) {
   .panel[class*="col-"] { --col-span: 12; }
   .stats-bar { grid-template-columns: 1fr; }
+
+  /* Panel header: pin the chevron-toggle to the right so the count hugs the
+     title instead of floating in the middle (the row is wider than needed on
+     phones, so justify-content: space-between spreads 3 flex items out). */
+  .panel-toggle { margin-left: auto; }
+
+  /* Keyboard shortcuts button is useless without a physical keyboard and
+     overlaps the AIPULSE logo on narrow viewports — hide on mobile. */
+  .kbd-help-btn { display: none; }
+
+  /* ⌘K kbd hint in the search trigger is also meaningless on touch. */
+  .search-trigger kbd { display: none; }
 }
 
 @media (min-width: 1600px) {
