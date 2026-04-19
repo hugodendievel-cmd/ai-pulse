@@ -77,4 +77,13 @@ describe("mobile-responsive panel stacking", () => {
     expect(blocks).toMatch(/\.kbd-help-btn\s*\{[^}]*display:\s*none/);
     expect(blocks).toMatch(/\.search-trigger\s+kbd\s*\{[^}]*display:\s*none/);
   });
+
+  it("tab-scoped overrides exist for Code and Community (only the All view keeps the default layout)", () => {
+    expect(css).toMatch(
+      /\.dashboard\[data-filter=["']code["']\]\s+\.panel\[data-section=["']code["']\][^}]*--col-span:\s*12/,
+    );
+    expect(css).toMatch(
+      /\.dashboard\[data-filter=["']community["']\]\s+\.panel\[data-section=["']community["']\][^}]*--col-span:\s*6/,
+    );
+  });
 });
