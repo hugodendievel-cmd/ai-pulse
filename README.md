@@ -2,9 +2,9 @@
 
 AI news intelligence dashboard — LLM releases, acquisitions, research papers, trending models, and community buzz. Your own AI analyst.
 
-10+ sources. One command. Zero cloud.
+12 sources. One command. Zero cloud.
 
-<img width="2535" height="1203" alt="Capture d’écran 2026-03-19 à 20 49 52" src="https://github.com/user-attachments/assets/6f8d6634-b2c3-4884-b8a7-dc3b3c10ffbe" />
+<img width="2535" height="1203" alt="Capture d’écran 2026-03-19 à 20 49 52" src="https://github.com/user-attachments/assets/6f8d6634-b2c3-4884-b8a7-dc3b3c10ffbe" />
 
 ## Quick Start
 
@@ -19,8 +19,8 @@ That's it. Opens at `http://localhost:3200`. On first run, a `.env` file is crea
 ### From source
 
 ```bash
-git clone <your-repo-url>
-cd ai-dashboard
+git clone https://github.com/hugodendievel-cmd/ai-pulse.git
+cd ai-pulse
 npm install
 npm start
 ```
@@ -30,10 +30,10 @@ npm start
 Edit `.env` in your working directory:
 
 ```bash
-# LLM (optional — enables AI briefing, model radar, signals)
+# LLM (optional — enables AI briefing, model radar, signals, weekly digest)
 LLM_PROVIDER=openai       # anthropic | openai | gemini | disabled
 LLM_API_KEY=sk-...
-LLM_MODEL=gpt-5.4         # optional override
+LLM_MODEL=gpt-4.1         # optional override
 
 # Server
 PORT=3200
@@ -63,8 +63,8 @@ A Jarvis-style HUD with:
 - **Reddit** — top posts from r/MachineLearning, r/LocalLLaMA, r/artificial, r/singularity
 - **Hacker News** — AI-related stories from the front page
 - **Product Hunt** — AI product launches
-- **Light / dark mode** — toggle with persistence
-- **Paywall bypass** — 🔓 button on news articles
+- **Weekly Digest** — on-demand 7-day synthesis across all sources (see below)
+- **Light / dark / terminal mode** — toggle with persistence
 
 ### Smart Refresh
 
@@ -81,86 +81,120 @@ Connect an LLM for enhanced analysis:
 - **Providers:** Anthropic Claude, OpenAI GPT, Google Gemini
 - Graceful fallback when LLM is unavailable
 
-## Data Sources (10)
+### Weekly Digest
 
-| Source       | What                                                         | Key?     |
-| ------------ | ------------------------------------------------------------ | -------- |
-| Hacker News  | AI stories from the front page                               | None     |
-| ArXiv        | AI/ML/NLP/CV papers                                          | None     |
-| Hugging Face | Trending models & datasets                                   | None     |
-| GitHub       | Trending AI repositories                                     | Optional |
-| TechCrunch   | AI news RSS                                                  | None     |
-| The Verge    | AI news RSS                                                  | None     |
-| VentureBeat  | AI news RSS                                                  | None     |
-| Reddit       | r/MachineLearning, r/LocalLLaMA, r/artificial, r/singularity | None     |
-| Google News  | AI search RSS                                                | None     |
-| Product Hunt | AI product launches                                          | None     |
+The weekly digest synthesises 7 days of content from all 12 sources into a structured briefing: TL;DR, Key Highlights, Model & Tool Updates, Paper Picks, Community Buzz, and Look Ahead.
 
-**All sources work without API keys.** GitHub token is optional (for higher rate limits).
+**Triggering:**
+
+- Click the **Generate Weekly Digest** button in the dashboard (Digest tab)
+- Or call `POST /api/digest/generate` directly
+
+**Once-per-ISO-week guard:** The server allows one digest per ISO 8601 week. If a digest already exists for the current week, the endpoint returns `409` with the existing digest's `generatedAt` and `weekId`. The dashboard displays the existing digest with a note ("already generated this week") instead of an error.
+
+**Force regeneration (operator/admin):** `POST /api/digest/generate?force=1` skips the weekly guard and overwrites the existing digest. This is an operator escape hatch, not a normal user action — the LLM daily budget cap still applies.
+
+**Week boundaries:** Week boundaries follow **Europe/Brussels** time (CET in winter, CEST in summer; DST-transparent). The same timezone is used for the daily LLM budget rollover.
+
+**Storage:** `.ai-pulse/digests/{weekId}.json` and `.ai-pulse/digests/latest.json` in your working directory. `weekId` format: `YYYY-Www` (e.g. `2026-W16`).
+
+**Retrieve:** `GET /api/digest` returns the latest digest, or `404` if none has been generated yet.
+
+## Data Sources (12)
+
+| Source         | What                                                         | Key?                                            |
+| -------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| Hacker News    | AI stories from the front page (Firebase JSON API)           | None                                            |
+| ArXiv          | AI/ML/NLP/CV papers (Atom)                                   | None                                            |
+| Hugging Face   | Trending models & datasets (REST)                            | None                                            |
+| GitHub         | Trending AI repositories (Search API)                        | Optional (`GITHUB_TOKEN` for higher rate limit) |
+| TechCrunch     | AI news (RSS)                                                | None                                            |
+| The Verge      | AI news (Atom)                                               | None                                            |
+| VentureBeat    | AI news (RSS)                                                | None                                            |
+| Reddit         | r/MachineLearning, r/LocalLLaMA, r/artificial, r/singularity | Optional OAuth (`REDDIT_CLIENT_ID` / `_SECRET`) |
+| Google News    | AI search (RSS)                                              | None                                            |
+| NewsAPI        | 30 AI headlines (REST)                                       | Required (free tier at newsapi.org)             |
+| Product Hunt   | AI product launches (Atom)                                   | None                                            |
+| Simon Willison | AI/ML blog (simonwillison.net) (Atom)                        | None                                            |
+
+**All sources work without API keys**, except NewsAPI which silently self-skips when `NEWSAPI_KEY` is absent. GitHub and Reddit keys are optional (for higher rate limits / private OAuth).
 
 ## API Keys Setup
 
-All sources work **without API keys**. Optional keys unlock higher rate limits and LLM analysis.
+All sources work **without API keys** (NewsAPI being the one exception — it silently skips if absent). Optional keys unlock higher rate limits and LLM analysis.
 
 ### LLM Provider (optional)
 
 Set `LLM_PROVIDER` in `.env` to one of: `anthropic`, `openai`, `gemini`
 
-| Provider  | Env Var       | Default Model          |
-| --------- | ------------- | ---------------------- |
-| anthropic | `LLM_API_KEY` | claude-sonnet-4-6      |
-| openai    | `LLM_API_KEY` | gpt-5.4                |
-| gemini    | `LLM_API_KEY` | gemini-3-flash-preview |
+| Provider  | Env Var       | Default Model       |
+| --------- | ------------- | ------------------- |
+| anthropic | `LLM_API_KEY` | `claude-sonnet-4-6` |
+| openai    | `LLM_API_KEY` | `gpt-4.1`           |
+| gemini    | `LLM_API_KEY` | `gemini-2.5-flash`  |
 
 ## Architecture
 
 ```
 ai-pulse/
 ├── cli.mjs                    # npx entrypoint (bin)
-├── server.mjs                 # Express server (SSE, auto-refresh, LLM)
+├── server.mjs                 # Express server (SSE, sweep scheduler, digest endpoints)
 ├── diag.mjs                   # Diagnostic script
 ├── .env.example               # Template (copied on first run)
-├── package.json               # Runtime: express only
+├── package.json               # Runtime deps: express, pino, fast-xml-parser, helmet, express-rate-limit
 │
 ├── apis/
-│   ├── briefing.mjs           # Master orchestrator — all sources in parallel
+│   ├── briefing.mjs           # Orchestrator — runSweep() + runDigestSweep(); exports SOURCE_COUNT, SOURCE_NAMES
 │   ├── save-briefing.mjs      # CLI: save timestamped + latest.json
 │   ├── utils/
-│   │   ├── fetch.mjs          # safeFetch() — timeout, retries, abort
-│   │   └── env.mjs            # .env loader (cwd → package root fallback)
-│   └── sources/               # 10 self-contained source modules
+│   │   ├── fetch.mjs          # safeFetch() / safeFetchText() — timeout, retries, abort
+│   │   ├── env.mjs            # .env loader (cwd → package root fallback)
+│   │   ├── sanitize.mjs       # XSS prevention, entity decode
+│   │   └── xml.mjs            # fast-xml-parser wrapper for RSS/Atom
+│   └── sources/               # 12 self-contained source modules
 │       ├── hackernews.mjs     # Each exports briefing() → structured data
 │       ├── arxiv.mjs          # Standalone: node apis/sources/arxiv.mjs
 │       └── ...
 │
 ├── dashboard/
+│   ├── inject.mjs             # Static-export tool: inlines CSS+JS for one-off snapshots (not a build step)
 │   └── public/
-│       └── index.html         # Self-contained Jarvis HUD (inline CSS/JS)
+│       ├── index.html         # Shell; references /app.js + /style.css (cache-busted)
+│       ├── app.js             # All client JS: SSE, panels, themes, ⌘K, digest UI
+│       ├── style.css          # All styles: dark, light, terminal themes
+│       └── favicon.svg
 │
 └── lib/
-    ├── llm/                   # LLM abstraction (3 providers, raw fetch)
+    ├── logger.mjs             # pino singleton
+    ├── sweep-progress.mjs     # Sweep progress state machine
+    ├── llm/                   # LLM abstraction (3 providers, raw fetch — no SDKs)
     │   ├── provider.mjs       # Base class
     │   ├── anthropic.mjs      # Claude
     │   ├── openai.mjs         # GPT
     │   ├── gemini.mjs         # Gemini
-    │   ├── analysis.mjs       # AI news analysis/synthesis
+    │   ├── analysis.mjs       # Per-sweep AI news analysis/synthesis
+    │   ├── weekly-digest.mjs  # 7-day digest pipeline
+    │   ├── budget.mjs         # Persistent daily budget (Europe/Brussels)
     │   └── index.mjs          # Factory: createLLMProvider()
-    └── delta/                 # Change tracking between sweeps
-        ├── engine.mjs         # Delta computation
-        ├── memory.mjs         # Hot memory (3 runs)
-        └── index.mjs          # Re-exports
+    ├── delta/                 # Change tracking between sweeps
+    │   ├── engine.mjs         # Delta computation
+    │   ├── memory.mjs         # Hot memory (3 runs)
+    │   └── index.mjs          # Re-exports
+    └── digest/                # Weekly digest persistence
+        ├── store.mjs          # saveDigest() / loadLatestDigest()
+        └── week-id.mjs        # weekIdBrussels() — ISO 8601 week in Europe/Brussels
 ```
 
-Runtime data is stored in your working directory under `.ai-pulse/`.
+Runtime data is stored in your working directory under `.ai-pulse/` (hot memory ring + digests + persisted LLM budget).
 
 ### Design Principles
 
 - **Pure ESM** — every file is `.mjs` with explicit imports
-- **Minimal dependencies** — Express is the only runtime dependency
+- **Minimal dependencies** — Express is the only runtime dependency (plus pino for logging and fast-xml-parser for RSS/Atom)
 - **Parallel execution** — `Promise.allSettled()` fires all sources simultaneously
 - **Graceful degradation** — missing keys produce empty arrays, not crashes
 - **npx-ready** — resolves package assets via `import.meta.url`, user data via `process.cwd()`
-- **Self-contained dashboard** — single HTML file with inline CSS/JS
+- **Separate dashboard assets** — `index.html`, `app.js`, `style.css` served individually with 1-hour cache headers in production
 
 ## npm Scripts
 
@@ -174,23 +208,31 @@ Runtime data is stored in your working directory under `.ai-pulse/`.
 
 ## API Endpoints
 
-| Endpoint          | Description                       |
-| ----------------- | --------------------------------- |
-| `GET /`           | Dashboard HUD                     |
-| `GET /api/data`   | Current intelligence data (JSON)  |
-| `GET /api/health` | Server status, uptime, LLM status |
-| `GET /events`     | SSE stream for live push updates  |
+| Endpoint                    | Method | Description                                                                              |
+| --------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| `/`                         | GET    | Dashboard shell (cache-busted asset URLs)                                                |
+| `/api/data`                 | GET    | Current intelligence data (JSON); `503` before first sweep                               |
+| `/api/health`               | GET    | Uptime, sweep stats, LLM budget, source stats, SSE client count                          |
+| `/api/digest`               | GET    | Latest weekly digest from `.ai-pulse/digests/latest.json`; `404` if none yet             |
+| `/api/digest/generate`      | POST   | Triggers digest sweep + LLM generation; once-per-ISO-week guard; `?force=1` override     |
+| `/events`                   | GET    | SSE stream: `progress` / `update` / `digest` events; capped at `MAX_SSE_CLIENTS`         |
 
 ## Configuration
 
-| Variable                   | Default      | Description                                    |
-| -------------------------- | ------------ | ---------------------------------------------- |
-| `PORT`                     | 3200         | Server port                                    |
-| `REFRESH_INTERVAL_MINUTES` | 15           | Auto-refresh interval                          |
-| `LLM_PROVIDER`             | disabled     | `anthropic`, `openai`, `gemini`, or `disabled` |
-| `LLM_API_KEY`              | —            | API key for LLM provider                       |
-| `LLM_MODEL`                | per-provider | Override model selection                       |
-| `GITHUB_TOKEN`             | —            | GitHub PAT (optional, higher rate limits)      |
+| Variable                                     | Default      | Description                                                                                                          |
+| -------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                       | `3200`       | Server port                                                                                                          |
+| `REFRESH_INTERVAL_MINUTES`                   | `15`         | Auto-refresh interval                                                                                                |
+| `LLM_PROVIDER`                               | `disabled`   | `anthropic`, `openai`, `gemini`, or `disabled`                                                                       |
+| `LLM_API_KEY`                                | —            | API key for LLM provider                                                                                             |
+| `LLM_MODEL`                                  | per-provider | Override model selection (e.g. `gpt-4.1`)                                                                            |
+| `GITHUB_TOKEN`                               | —            | GitHub PAT (optional, higher rate limits)                                                                            |
+| `NEWSAPI_KEY`                                | —            | Enables NewsAPI source (silently skipped if absent)                                                                  |
+| `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`  | —            | Reddit OAuth (optional; falls back to public JSON)                                                                   |
+| `MAX_SSE_CLIENTS`                            | `200`        | Maximum concurrent SSE connections                                                                                   |
+| `MAX_LLM_CALLS_PER_DAY`                      | `100`        | Daily LLM budget — persisted to `.ai-pulse/memory/llm-budget.json`; resets at midnight Europe/Brussels (DST-aware)   |
+| `LOG_LEVEL`                                  | `info`       | pino log level: `trace` / `debug` / `info` / `warn` / `error`                                                        |
+| `NODE_ENV`                                   | —            | `production` or `development` — affects static-asset cache TTL (1 h in production) and pino transport                |
 
 ## License
 
