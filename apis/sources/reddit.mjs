@@ -1,4 +1,5 @@
 // apis/sources/reddit.mjs — Reddit AI subreddits (OAuth when configured, public fallback)
+import log from "../../lib/logger.mjs";
 import { safeFetch } from "../utils/fetch.mjs";
 
 const SUBREDDITS = [
@@ -8,33 +9,68 @@ const SUBREDDITS = [
   "singularity",
 ];
 
-const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID;
-const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET;
-
-let oauthToken = null;
-let tokenExpiry = 0;
+// Module-level cache. Shape when set:
+//   { token: string, expiresAt: number, clientId: string, clientSecret: string }
+// Credentials are read at call time inside getOAuthToken() so key rotation
+// takes effect without a restart. Two concurrent cache misses may each fire
+// an OAuth request; the second write wins — a minor rate waste, not a bug.
+let cachedToken = null;
 
 async function getOAuthToken() {
-  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) return null;
-  if (oauthToken && Date.now() < tokenExpiry) return oauthToken;
+  const clientId = process.env.REDDIT_CLIENT_ID;
+  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
 
-  const credentials = Buffer.from(
-    `${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`,
-  ).toString("base64");
-  const res = await fetch("https://www.reddit.com/api/v1/access_token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "AIPulse/1.0",
-    },
-    body: "grant_type=client_credentials",
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  oauthToken = data.access_token;
-  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-  return oauthToken;
+  // No credentials → public path
+  if (!clientId || !clientSecret) return null;
+
+  // Cache hit: same creds, token not expired
+  if (
+    cachedToken &&
+    cachedToken.clientId === clientId &&
+    cachedToken.clientSecret === clientSecret &&
+    Date.now() < cachedToken.expiresAt
+  ) {
+    return cachedToken.token;
+  }
+
+  // Cache miss or creds rotated — fetch a new token
+  try {
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      "base64",
+    );
+    const res = await fetch("https://www.reddit.com/api/v1/access_token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "AIPulse/1.0",
+      },
+      body: "grant_type=client_credentials",
+    });
+    if (!res.ok) {
+      log.warn(
+        { status: res.status },
+        "Reddit OAuth token request failed — falling back to public JSON",
+      );
+      cachedToken = null;
+      return null;
+    }
+    const data = await res.json();
+    cachedToken = {
+      token: data.access_token,
+      expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+      clientId,
+      clientSecret,
+    };
+    return cachedToken.token;
+  } catch (err) {
+    log.warn(
+      { err: err.message },
+      "Reddit OAuth token request threw — falling back to public JSON",
+    );
+    cachedToken = null;
+    return null;
+  }
 }
 
 export async function briefing() {
