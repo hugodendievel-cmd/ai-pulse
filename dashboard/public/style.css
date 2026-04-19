@@ -1285,16 +1285,19 @@ html:not(.light) .icon-moon {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   background: var(--glass);
   cursor: pointer;
   user-select: none;
 }
 
+/* Pin the chevron-toggle to the right edge so the count (middle flex item)
+   stays snug next to the title instead of floating when the header is wider
+   than the title + count combined. */
 .panel-toggle {
   font-size: 0.65rem;
   color: var(--muted);
-  margin-left: 8px;
+  margin-left: auto;
   transition: transform 0.25s ease;
   display: inline-block;
 }
@@ -2618,11 +2621,6 @@ html.light .theme-toggle .icon-moon {
 @media (max-width: 768px) {
   .panel[class*="col-"] { --col-span: 12; }
   .stats-bar { grid-template-columns: 1fr; }
-
-  /* Panel header: pin the chevron-toggle to the right so the count hugs the
-     title instead of floating in the middle (the row is wider than needed on
-     phones, so justify-content: space-between spreads 3 flex items out). */
-  .panel-toggle { margin-left: auto; }
 
   /* Keyboard shortcuts button is useless without a physical keyboard and
      overlaps the AIPULSE logo on narrow viewports — hide on mobile. */
